@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AVENTURApp</title>
+<meta name="theme-color" content="#FBF3E4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AVENTURApp">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBF3E4; --paper:#FFFDF8; --soft:#F3E6D3; --soft2:#E9D7C0;
+  --ink:#2B211B; --ink2:#6B5A4E;
+  --ocre:#D9653B; --sun:#F6C445; --mint:#8CC7A1; --sky:#9CCBE8; --rose:#F2A7A0;
+  --r:18px; --maxw:440px; --navh:72px;
+  --fd:'Fredoka',system-ui,sans-serif; --fu:'Nunito',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--fu);font-weight:600;-webkit-tap-highlight-color:transparent}
+body{max-width:var(--maxw);margin:0 auto;min-height:100vh;min-height:100dvh}
+button{font:inherit;color:inherit;cursor:pointer}
+h1,h2,h3{font-family:var(--fd);margin:0;line-height:1.1}
+.screen{display:none;padding:16px 16px calc(var(--navh) + 28px + env(safe-area-inset-bottom))}
+.screen.active{display:block}
+.screen.sin-nav{padding-bottom:40px}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:var(--r);box-shadow:3px 3px 0 var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);font-family:var(--fd);font-weight:600;font-size:17px;box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.btn.prim{background:var(--ocre);color:#fff}
+.btn.sun{background:var(--sun)}
+.btn.chico{min-height:40px;font-size:15px;padding:0 12px}
+.btn.full{width:100%}
+.muted{color:var(--ink2)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- cabecera ---------- */
+.logo{display:flex;flex-direction:column;align-items:center;margin:6px 0 14px;text-align:center}
+.logo small{font-family:var(--fd);font-weight:600;font-size:13px;letter-spacing:.18em;color:var(--ink2)}
+.logo b{font-family:var(--fd);font-weight:700;font-size:34px;letter-spacing:.01em;line-height:1}
+.logo b span{color:var(--ocre)}
+.hola{font-size:16px;text-align:center;margin:0 0 18px}
+.sec-t{font-family:var(--fd);font-weight:600;font-size:20px;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+
+/* ---------- tarjeta de aventura ---------- */
+.av{overflow:hidden;margin-bottom:18px}
+.av-ilus{background:var(--av,var(--sky));border-bottom:2px solid var(--ink);padding:10px 8px 0}
+.av-b{padding:14px 16px 16px}
+.av-b h2{font-size:24px}
+.av-epoca{font-family:var(--fd);font-weight:600;font-size:13px;letter-spacing:.08em;color:var(--ocre);text-transform:uppercase;margin-bottom:4px}
+.av-intro{margin:8px 0 12px;font-size:15px;line-height:1.4}
+.av-prog{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:14px}
+.sellitos{display:flex;gap:4px;flex-wrap:wrap}
+.sellitos i{width:16px;height:16px;border-radius:50%;border:2px dashed var(--ink2);display:block}
+.sellitos i.ok{border:2px solid var(--ink);background:var(--ocre)}
+.sellitos i.ok.fz{background:var(--sun)}
+.av-acc{display:flex;gap:10px}
+.av-acc .btn.prim{flex:1}
+
+/* ---------- ilustraciones ---------- */
+.ilus{display:block;width:100%}
+.ilus svg,.ilus img{display:block;width:100%;height:auto}
+.ilus img{aspect-ratio:168/64;object-fit:contain}
+.ilus.foto{padding:0!important;background:none!important}
+.ilus.foto img{aspect-ratio:3/2;object-fit:cover;border-radius:10px}
+.av-ilus:has(.foto){padding:0;background:none}
+.av-ilus .ilus.foto img{border-radius:0}
+.ilus .emo{font-size:64px;text-align:center;line-height:1.6}
+/* escena compuesta con piezas del kit */
+.esc{position:relative;aspect-ratio:2/1;overflow:hidden}
+.esc .fondo{position:absolute;left:50%;bottom:5%;height:80%;transform:translateX(-50%);opacity:.9}
+.esc .actores{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-evenly;padding:0 3% 4%}
+.esc .actores img{display:block;height:var(--h,60%);max-width:44%;object-fit:contain;flex-shrink:1;min-width:0}
+.esc .actores img.arriba{align-self:flex-start;margin-top:5%}
+/* Chewie, el guía */
+.chewie{display:flex;gap:8px;align-items:flex-start;margin:0 0 12px}
+.chewie img{width:58px;height:58px;object-fit:contain;flex-shrink:0}
+.chewie .bur{position:relative;flex:1;background:#fff;border:2px solid var(--ink);border-radius:14px;padding:8px 12px;font-size:15px;line-height:1.4}
+.chewie .bur::before{content:"";position:absolute;left:-8px;top:18px;width:12px;height:12px;background:#fff;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg)}
+.chewie .bur b{font-family:var(--fd);font-weight:600;color:var(--ocre)}
+.sabias summary img{width:30px;height:30px;object-fit:contain}
+/* quién eres */
+.quien{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,180px));justify-content:center;gap:14px;margin-top:8px}
+.u{padding:14px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:var(--fd);font-weight:700;font-size:22px;background:var(--paper)}
+.u img{width:100%;height:120px;object-fit:contain}
+.u:active{transform:translate(3px,3px);box-shadow:none}
+.yo{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 18px}
+.yo img{width:46px;height:46px;object-fit:contain;border:2px solid var(--ink);border-radius:50%;background:var(--sun);padding:2px}
+.yo p{margin:0;font-size:16px;text-align:left;line-height:1.3}
+
+/* ---------- el rollo (juego) ---------- */
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;margin:-16px -16px 14px;background:var(--bg);border-bottom:2px solid var(--ink)}
+.topbar h1{flex:1;font-size:18px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ico-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);border-radius:12px;background:var(--paper);flex-shrink:0}
+.ico-btn svg{width:22px;height:22px}
+.rollo{position:relative}
+.pan{position:relative;background:var(--paper);border:2px solid var(--ink);border-radius:6px;padding:14px 14px 16px;transform-origin:top center}
+.pan.nuevo{animation:desenrolla .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes desenrolla{from{clip-path:inset(0 0 100% 0);transform:translateY(-6px)}to{clip-path:inset(0 0 0 0);transform:none}}
+.pan.fin{background:#FFF4EC}
+.pan.final{background:#FFF8DF;border-color:var(--ocre);border-width:3px}
+.corte{display:flex;align-items:center;gap:8px;margin:6px 0;color:var(--ink2);font-family:var(--fd);font-size:13px;font-weight:600}
+.corte::before,.corte::after{content:"";flex:1;border-top:2px dashed var(--soft2)}
+.corte svg{width:18px;height:18px}
+.pan-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.num{width:34px;height:34px;border:2px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:17px;flex-shrink:0;background:var(--paper)}
+.fin .num{background:var(--ink);color:#fff}
+.final .num{background:var(--ocre);color:#fff;border-color:var(--ocre)}
+.pan-h h2{font-size:21px;text-transform:uppercase;letter-spacing:.01em}
+.pan .ilus{margin:4px 0 10px;border-radius:10px;background:var(--soft);padding:6px 4px 0;overflow:hidden}
+.pan .ilus.kit{padding:0}
+.pan.fin .ilus{background:#FBE3D3}
+.pan.final .ilus{background:#FCEBB3}
+.txt{font-size:17px;line-height:1.45;margin:0 0 12px;font-weight:700}
+.sabias{margin:0 0 12px}
+.sabias summary{list-style:none;display:inline-flex;align-items:center;gap:6px;font-family:var(--fd);font-weight:600;font-size:14px;color:var(--ocre);cursor:pointer;min-height:32px}
+.sabias summary::-webkit-details-marker{display:none}
+.sabias p{margin:4px 0 0;font-size:15px;line-height:1.4;background:var(--soft);border-radius:10px;padding:8px 10px}
+.ops{display:flex;flex-direction:column;gap:10px}
+.op{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px 8px 10px;border:2px solid var(--ink);border-radius:14px;background:#fff;text-align:left;font-size:16px;font-weight:700;line-height:1.25;box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.op:active{transform:translate(3px,3px);box-shadow:none}
+.op .l{width:30px;height:30px;border:2px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;flex-shrink:0}
+.op.elegida{background:var(--sun);box-shadow:none;transform:translate(3px,3px)}
+.op.descartada{opacity:.35;box-shadow:none;border-style:dashed}
+.op[disabled]{cursor:default}
+.dato{border:2px dashed var(--ocre);border-radius:12px;padding:10px 12px;margin:0 0 14px;font-size:15px;line-height:1.4;background:#fff}
+.dato b{color:var(--ocre);font-family:var(--fd);font-weight:600}
+.sonido{margin-left:auto;font-family:var(--fd);font-weight:700;font-size:24px;color:var(--ocre);transform:rotate(-8deg);white-space:nowrap;pointer-events:none}
+.pan.nuevo .sonido{animation:pop .5s .5s both}
+@keyframes pop{from{transform:scale(0) rotate(-30deg);opacity:0}70%{transform:scale(1.25) rotate(-6deg)}to{transform:scale(1) rotate(-8deg);opacity:1}}
+.sello{display:inline-block;font-family:var(--fd);font-weight:700;font-size:26px;color:var(--ocre);border:3px solid var(--ocre);border-radius:10px;padding:0 14px;transform:rotate(-6deg);margin:0 0 12px}
+.pan.nuevo .sello{animation:sello .45s .3s both}
+@keyframes sello{from{transform:scale(2.4) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(-6deg);opacity:1}}
+.final .sello{color:#fff;background:var(--ocre);font-size:20px}
+.nuevo-final{display:flex;align-items:center;gap:8px;background:var(--sun);border:2px solid var(--ink);border-radius:12px;padding:8px 12px;margin:0 0 12px;font-family:var(--fd);font-weight:600;font-size:15px}
+.fin-acc{display:flex;flex-direction:column;gap:10px}
+
+/* ---------- confeti ---------- */
+.confeti{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.confeti i{position:absolute;top:-20px;width:10px;height:14px;border-radius:2px;animation:cae linear forwards}
+@keyframes cae{to{transform:translateY(110vh) rotate(720deg)}}
+
+/* ---------- álbum de finales ---------- */
+.contador{display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:14px}
+.contador b{font-family:var(--fd);font-size:38px;font-weight:700;line-height:1}
+.contador b small{font-size:20px;color:var(--ink2)}
+.contador p{margin:0;font-size:14px;line-height:1.35}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fz-card{padding:8px;display:flex;flex-direction:column;gap:6px;min-height:160px}
+.fz-card .ilus{background:#FBE3D3;border-radius:10px;padding:4px 2px 0;overflow:hidden}
+.fz-card .ilus.kit,.av-ilus .ilus.kit{padding:0}
+.fz-card.feliz .ilus{background:#FCEBB3}
+.fz-card h3{font-size:16px;text-transform:uppercase}
+.fz-card .tag{align-self:flex-start;font-family:var(--fd);font-weight:600;font-size:12px;border-radius:8px;padding:2px 8px;background:var(--ink);color:#fff}
+.fz-card.feliz .tag{background:var(--ocre)}
+.fz-card .veces{font-size:13px;color:var(--ink2)}
+.fz-card.oculto{border-style:dashed;box-shadow:none;background:transparent;align-items:center;justify-content:center;text-align:center;color:var(--ink2)}
+.fz-card.oculto .q{font-family:var(--fd);font-weight:700;font-size:44px;line-height:1;color:var(--soft2)}
+
+/* ---------- cuaderno de datos ---------- */
+.dt{display:flex;gap:12px;align-items:flex-start;padding:12px;margin-bottom:10px}
+.dt .num{width:30px;height:30px;font-size:15px}
+.dt h3{font-size:15px;text-transform:uppercase;margin-bottom:3px}
+.dt p{margin:0;font-size:15px;line-height:1.4}
+.dt.oculto{border-style:dashed;box-shadow:none;background:transparent;color:var(--ink2)}
+
+/* ---------- mapa ---------- */
+.mapa-w{padding:10px 6px}
+.mapa-w svg{display:block;width:100%;height:auto}
+.leyenda{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;font-size:13px;margin-top:10px}
+.leyenda span{display:inline-flex;align-items:center;gap:6px}
+.leyenda i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);display:block}
+
+/* ---------- pie / nav ---------- */
+.pie{margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:13px;color:var(--ink2)}
+.pie .fila{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:var(--maxw);height:calc(var(--navh) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--paper);border-top:2px solid var(--ink);display:flex;z-index:20}
+nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:var(--fd);font-weight:600;font-size:13px;color:var(--ink2)}
+nav button svg{width:26px;height:26px}
+nav button.on{color:var(--ink)}
+nav button.on svg .rel{fill:var(--sun)}
+nav.oculta{display:none}
+.toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+.toast.on{opacity:1}
+.vacio{text-align:center;padding:30px 10px;color:var(--ink2)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Piezas de dibujo reutilizables (la niña, el reno, el mamut...) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="d-nina">
+<path d="M4.5 11 C3.5 3 20.5 3 19.5 11 C20.5 15 19.5 18 17.5 19 L6.5 19 C4.5 18 3.5 15 4.5 11 Z" fill="#3B2A20"/>
+<path d="M9 31 V38 M15 31 V38" stroke="#2B211B" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M7 17.5 L17 17.5 L19.5 31 L4.5 31 Z" fill="#F5E4D8" stroke="#2B211B" stroke-width="1.3" stroke-linejoin="round"/>
+<path d="M4.5 31 L7 29 L9.5 31 L12 29 L14.5 31 L17 29 L19.5 31" fill="none" stroke="#2B211B" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M9.5 22 L14.5 22" stroke="#D9653B" stroke-width="1.6" stroke-linecap="round"/>
+<circle cx="12" cy="10.5" r="6.5" fill="#fff" stroke="#2B211B" stroke-width="1.3"/>
+<path d="M5.6 9.5 C6 4.5 18 4.5 18.4 9.5 C15 7 9 7 5.6 9.5 Z" fill="#3B2A20"/>
+<circle cx="9.7" cy="11" r="1" fill="#2B211B"/><circle cx="14.3" cy="11" r="1" fill="#2B211B"/>
+<circle cx="8" cy="13" r="1.1" fill="#F2A7A0"/><circle cx="16" cy="13" r="1.1" fill="#F2A7A0"/>
+</g>
+<g id="d-reno" stroke="#2B211B" stroke-width="1.6" fill="#fff" stroke-linejoin="round" stroke-linecap="round"><path d="M12 27 L11 35 M15 28 L15 35 M23 28 L23 35 M26 27 L27 35" fill="none"/><ellipse cx="19" cy="24" rx="9.5" ry="5.5"/><path d="M25 22 L28 13 L32 13 L30 23 Z"/><ellipse cx="31" cy="12" rx="4.5" ry="3"/><path d="M29 9.5 L26 3 M27.3 6 L23.5 5 M32 9.5 L34 3 M33.2 6 L37 5" fill="none"/><path d="M9.5 22 L7.5 20" fill="none"/></g>
+<g id="d-mamut"><g stroke="#2B211B" stroke-width="1.6" fill="#fff" stroke-linejoin="round" stroke-linecap="round"><rect x="9" y="25" width="4.5" height="9" rx="1.5"/><rect x="20" y="25" width="4.5" height="9" rx="1.5"/><path d="M5 26 C4 17 10 12 18 12 C25 12 29 15 29 20 L29 28 C29 29 28 30 27 30 L7 30 C6 30 5 28 5 26 Z" fill="#E3D2C2"/><path d="M32 21 C34 24 34 28 32 30.5 L33.5 32 C36.5 29 36.5 23 34.5 19.5 Z" fill="#E3D2C2"/><circle cx="29" cy="17" r="6.5" fill="#E3D2C2"/><path d="M25.5 12.5 C21.5 14 21.5 20 25.5 21.5" fill="#E3D2C2"/><path d="M28.5 22.5 C29.5 27 33 28.5 36.5 26.5" fill="none" stroke-width="2"/><path d="M9 18 l2 -2.5 M13 15.5 l2 -2.5 M17 14.5 l2 -2.5" fill="none"/></g><circle cx="30.5" cy="15.5" r="1" fill="#2B211B"/></g>
+<g id="d-mano" fill="#D9653B"><rect x="13" y="10" width="3.6" height="14" rx="1.8"/><rect x="17.2" y="7" width="3.6" height="17" rx="1.8"/><rect x="21.4" y="8.5" width="3.6" height="15.5" rx="1.8"/><rect x="25.6" y="12" width="3.2" height="12" rx="1.6"/><rect x="13" y="19" width="15.8" height="14" rx="4.5"/><rect x="7.7" y="19" width="3.6" height="11" rx="1.8" transform="rotate(-38 9.5 24.5)"/></g>
+<path id="d-estrella" d="M0 -5 L1.5 -1.5 L5 0 L1.5 1.5 L0 5 L-1.5 1.5 L-5 0 L-1.5 -1.5 Z" fill="#D9653B"/>
+</defs></svg>
+
+<main>
+  <section class="screen sin-nav" id="s-quien"></section>
+  <section class="screen" id="s-inicio"></section>
+  <section class="screen sin-nav" id="s-juego"></section>
+  <section class="screen" id="s-finales"></section>
+  <section class="screen" id="s-datos"></section>
+  <section class="screen sin-nav" id="s-mapa"></section>
+</main>
+
+<nav id="nav" aria-label="Secciones">
+  <button data-s="inicio" class="on"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path class="rel" d="M13 6 L16 13 L13 20 L10 13 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="13" cy="13" r="1.4" fill="currentColor"/></svg>Aventuras</button>
+  <button data-s="finales"><svg viewBox="0 0 26 26" aria-hidden="true"><path class="rel" d="M13 3 L15.6 9.2 L22.3 9.7 L17.2 14 L18.8 20.6 L13 17 L7.2 20.6 L8.8 14 L3.7 9.7 L10.4 9.2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Finales</button>
+  <button data-s="datos"><svg viewBox="0 0 26 26" aria-hidden="true"><path class="rel" d="M4 5 C7 4 10 4.5 13 6.5 C16 4.5 19 4 22 5 L22 20 C19 19 16 19.5 13 21.5 C10 19.5 7 19 4 20 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 6.5 V21.5" stroke="currentColor" stroke-width="2"/></svg>Datos</button>
+</nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   ESCOGE TU PROPIA AVENTURApp
+   index.html único · vanilla JS · Apps Script + Sheet · PWA
+   ============================================================ */
+const APP_VERSION = '0.3.0';
+/* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
+const BACKEND_URL = '';
+
+const LS = { datos:'avp_datos_v3', partidas:'avp_partidas_v1', cola:'avp_cola_v1', juegos:'avp_juegos_v2', user:'avp_user' };
+const INK = '#2B211B', OC = '#D9653B';
+
+/* ---------- utilidades ---------- */
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function leer(k, def){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
+function guardar(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 2400); }
+function truthy(v){ return v === true || /^(true|si|sí|1|x|verdadero)$/i.test(String(v == null ? '' : v).trim()); }
+
+/* ============================================================
+   DIBUJOS — SVG simples. Se sustituyen solos si subes
+   img/escenas/<aventura>_<num>.webp
+   ============================================================ */
+const BOCA = {
+  s: `<path d="M10 13.8 C11.3 15 12.7 15 14 13.8" fill="none" stroke="${INK}" stroke-width="1.1" stroke-linecap="round"/>`,
+  o: `<circle cx="12" cy="14.3" r="1.2" fill="${INK}"/>`,
+  w: `<path d="M10 14.8 C11.3 13.8 12.7 13.8 14 14.8" fill="none" stroke="${INK}" stroke-width="1.1" stroke-linecap="round"/>`,
+  g: `<path d="M9.8 13.4 C10.8 16.2 13.2 16.2 14.2 13.4 Z" fill="${INK}"/>`
+};
+const BRAZOS = {
+  abajo: `<path d="M7.5 19.5 L4.5 26.5 M16.5 19.5 L19.5 26.5" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" fill="none"/>`,
+  arriba: `<path d="M7.5 19.5 L3 11 M16.5 19.5 L21 11" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" fill="none"/>`,
+  corre: `<path d="M7.5 19.5 L2 16 M16.5 19.5 L22 23" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" fill="none"/>`,
+  nada: ''
+};
+function nina(x, y, s, boca, brazos){
+  return `<g transform="translate(${x} ${y}) scale(${s || 1})"><use href="#d-nina"/>${BRAZOS[brazos || 'abajo']}${BOCA[boca || 's']}</g>`;
+}
+const suelo = `<path d="M-2 54 H166" stroke="${INK}" stroke-width="1.3"/>`;
+const rio = (y) => `<path d="M0 ${y} C10 ${y-4} 20 ${y+4} 30 ${y} S50 ${y-4} 60 ${y} S80 ${y+4} 90 ${y} S110 ${y-4} 120 ${y} S140 ${y+4} 164 ${y}" fill="none" stroke="${INK}" stroke-width="1.2"/>`;
+const arbusto = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s || 1})"><path d="M2 34 C-2 22 8 14 16 18 C20 6 38 6 42 16 C50 12 58 22 54 34 Z" fill="#fff" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/></g>`;
+const texto = (x, y, t, size, col) => `<text x="${x}" y="${y}" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="${size || 16}" fill="${col || OC}">${t}</text>`;
+const nieve = (pts) => `<g fill="#B5A89E">${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="1.4"/>`).join('')}</g>`;
+const estrella = (x, y, s) => `<use href="#d-estrella" transform="translate(${x} ${y}) scale(${s || 1})"/>`;
+const ojosEspiral = (a, b, y) => `<g fill="none" stroke="${INK}" stroke-width=".9"><circle cx="${a}" cy="${y}" r="1.9"/><circle cx="${b}" cy="${y}" r="1.9"/><circle cx="${a}" cy="${y}" r=".6"/><circle cx="${b}" cy="${y}" r=".6"/></g>`;
+
+const DIBUJOS = {
+  portada_hielo: () => `
+    <path d="M-2 54 L30 18 L48 34 L70 8 L100 40 L120 22 L166 54 Z" fill="#fff" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M62 17 L70 8 L78 18 L74 16 L70 19 L66 16 Z M25 24 L30 18 L36 23 L30 22 Z" fill="${INK}" opacity=".18"/>
+    <circle cx="146" cy="12" r="7" fill="#F6C445" stroke="${INK}" stroke-width="1.3"/>
+    <use href="#d-mamut" transform="translate(88 5) scale(1.4)"/>
+    ${nina(52, 16, 1, 's', 'arriba')}
+    ${nieve([[10,8],[40,6],[118,10],[20,40],[134,30],[156,34]])}
+    ${suelo}`,
+  campamento: () => `${suelo}
+    <path d="M18 54 L42 16 L66 54 Z" fill="#E3D2C2" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M37 10 L47 22 M47 10 L37 22" stroke="${INK}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M35 54 L42 40 L49 54 Z" fill="${INK}"/>
+    ${nina(86, 15, 1, 's', 'abajo')}
+    <path d="M114 54 L114 12" stroke="${INK}" stroke-width="1.6"/><path d="M114 4 L117.5 13 L110.5 13 Z" fill="#fff" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>
+    ${nieve([[8,10],[74,6],[132,12],[150,30],[140,44],[10,34],[74,34],[156,6]])}`,
+  renos: () => `${rio(50)}
+    <use href="#d-reno" transform="translate(16 10)"/><use href="#d-reno" transform="translate(58 4) scale(1.12)"/><use href="#d-reno" transform="translate(106 12)"/>`,
+  bayas: () => `${suelo}
+    ${arbusto(10, 20)}
+    <g fill="${OC}" stroke="${INK}" stroke-width=".8"><circle cx="24" cy="44" r="3.2"/><circle cx="34" cy="36" r="3.2"/><circle cx="44" cy="42" r="3.2"/><circle cx="54" cy="46" r="3.2"/><circle cx="36" cy="48" r="3.2"/></g>
+    <path d="M32 22 L32 16 M40 24 L44 19 M24 25 L20 20" stroke="${OC}" stroke-width="1.3" stroke-linecap="round"/>
+    ${texto(80, 38, '?', 22, INK)}
+    ${arbusto(98, 20)}
+    <g fill="${INK}"><circle cx="112" cy="44" r="2.6"/><circle cx="116" cy="47" r="2.6"/><circle cx="126" cy="38" r="2.6"/><circle cx="134" cy="45" r="2.6"/><circle cx="138" cy="42" r="2.6"/><circle cx="142" cy="48" r="2.6"/></g>`,
+  estampida: () => `
+    <use href="#d-reno" transform="translate(124 0) scale(.75)"/><use href="#d-reno" transform="translate(96 4) scale(.6)"/>
+    <ellipse cx="94" cy="48" rx="44" ry="6" fill="#F5E4D8" stroke="${INK}" stroke-width="1.3"/>
+    <ellipse cx="42" cy="47" rx="12" ry="6.5" fill="#fff" stroke="${INK}" stroke-width="1.3"/>
+    <path d="M30 45 C31 38.5 53 38.5 54 45 C48 42 36 42 30 45 Z" fill="#3B2A20"/>
+    ${ojosEspiral(38, 46, 47.5)}
+    <g fill="${INK}"><ellipse cx="76" cy="47" rx="1.4" ry="2.4"/><ellipse cx="79.2" cy="47" rx="1.4" ry="2.4"/><ellipse cx="104" cy="49" rx="1.4" ry="2.4"/><ellipse cx="107.2" cy="49" rx="1.4" ry="2.4"/></g>`,
+  mamut: () => `${suelo}
+    <path d="M4 20 H22 M8 28 H28 M4 36 H18" stroke="#B5A89E" stroke-width="1.4" stroke-linecap="round"/>
+    ${nina(36, 25, .75, 'o', 'abajo')}
+    ${texto(45, 20, '!', 14)}
+    <use href="#d-mamut" transform="translate(70 3) scale(1.5)"/>
+    <path d="M132 54 C130 48 134 46 136 54 M140 54 C139 50 142 48 144 54" fill="none" stroke="${INK}" stroke-width="1.2"/>`,
+  barriga: () => `${suelo}
+    ${nina(58, 6, 1, 'w', 'nada')}
+    ${arbusto(38, 20, 1.05)}
+    <path d="M52 44 L56 40 M68 34 L72 38 M78 46 L82 42" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>
+    <path d="M104 34 C108 30 112 38 116 34 C120 30 124 38 128 34" fill="none" stroke="${OC}" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M14 40 C10 36 14 32 18 34 M22 30 C20 26 24 24 26 26" fill="none" stroke="#B5A89E" stroke-width="1.2" stroke-linecap="round"/>`,
+  tormenta: () => `${suelo}
+    <path d="M0 54 C0 14 34 4 76 54 Z" fill="#E3D2C2" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M14 54 C14 30 46 30 50 54 Z" fill="${INK}"/>
+    <path d="M146 4 A11 11 0 1 0 154 24 A8.5 8.5 0 1 1 146 4 Z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+    ${nina(96, 15, 1, 'w', 'abajo')}
+    <ellipse cx="126" cy="46" rx="8" ry="7" fill="#F5E4D8" stroke="${INK}" stroke-width="1.3"/><path d="M120 40 C122 36 130 36 132 40" fill="none" stroke="${INK}" stroke-width="1.2"/>
+    ${nieve([[86,8],[104,4],[124,12],[80,30],[136,30],[150,40],[66,14],[118,26],[158,50],[90,46]])}`,
+  pisoton: () => `
+    <path d="M70 -4 L70 38 C70 45 100 45 100 38 L100 -4" fill="#E3D2C2" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M76 8 l3 -3 M86 14 l3 -3 M78 24 l3 -3 M92 28 l3 -3" stroke="${INK}" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M73 41 a4 3 0 0 1 8 0 M81 42.5 a4 3 0 0 1 8 0 M89 41 a4 3 0 0 1 8 0" fill="#fff" stroke="${INK}" stroke-width="1.1"/>
+    <ellipse cx="84" cy="50" rx="56" ry="4.5" fill="#F5E4D8" stroke="${INK}" stroke-width="1.3"/>
+    <ellipse cx="22" cy="49.5" rx="11" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.3"/>
+    <path d="M11 48 C12 43 32 43 33 48 C27 45.5 17 45.5 11 48 Z" fill="#3B2A20"/>
+    ${ojosEspiral(18, 26, 50)}
+    ${estrella(52, 22)}${estrella(60, 34, .7)}${estrella(112, 30, .8)}`,
+  zas: () => `${suelo}
+    <path d="M8 44 L42 36" stroke="${INK}" stroke-width="4.5" stroke-linecap="round"/><path d="M8 44 L42 36" stroke="#E3D2C2" stroke-width="2" stroke-linecap="round"/>
+    <path d="M42 36 L44 31" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M44 28 L108 16" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M118 14.2 L108.6 19.4 L107.4 12.4 Z" fill="#fff" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M30 22 H44 M34 14 H50 M26 30 H38" stroke="#B5A89E" stroke-width="1.3" stroke-linecap="round"/>
+    <use href="#d-reno" transform="translate(120 14)"/>`,
+  oscuro: () => `<rect x="-2" y="-4" width="168" height="64" rx="10" fill="${INK}"/>
+    ${nina(16, 15, 1, 'w', 'abajo')}
+    ${texto(104, 34, '¿?', 22, '#fff')}
+    ${texto(140, 46, '…grrr…', 12, '#9A8F88')}`,
+  hielo: () => `
+    <rect x="-2" y="40" width="168" height="20" fill="#fff"/>
+    ${rio(44)}<path d="M0 51 C10 48 20 54 30 51 S50 48 60 51 S80 54 90 51 S110 48 120 51 S140 54 164 51" fill="none" stroke="#B5A89E" stroke-width="1.1"/>
+    <rect x="56" y="4" width="50" height="48" rx="7" fill="#fff" stroke="${INK}" stroke-width="1.4"/>
+    ${nina(69, 9, 1, 'o', 'abajo')}
+    <rect x="56" y="4" width="50" height="48" rx="7" fill="#9CCBE8" fill-opacity=".35" stroke="${INK}" stroke-width="1.4"/>
+    <path d="M62 10 L66 18 M98 12 L101 17" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M50 14 C47 18 47 24 50 28 M112 14 C115 18 115 24 112 28" fill="none" stroke="${INK}" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M8 10 L18 18 L12 24 L24 32" fill="none" stroke="${OC}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`,
+  rio: () => `${rio(40)}
+    <path d="M0 52 C10 49 20 55 30 52 S50 49 60 52 S80 55 90 52 S110 49 120 52 S140 55 164 52" fill="none" stroke="#B5A89E" stroke-width="1.1"/>
+    <g fill="#E3D2C2" stroke="${INK}" stroke-width="1.3"><ellipse cx="14" cy="46" rx="11" ry="5"/><ellipse cx="46" cy="47" rx="10" ry="5"/><ellipse cx="78" cy="46" rx="11" ry="5"/></g>
+    ${nina(66, 2, 1, 's', 'arriba')}
+    <path d="M104 46 L160 46" stroke="#9CCBE8" stroke-width="7" stroke-linecap="round"/>
+    <path d="M114 43 L120 47 L116 50 M136 43 L141 47 L147 45" fill="none" stroke="${OC}" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M20 14 L40 24" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><path d="M20 14 L40 24" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+    <g fill="#fff" stroke="${INK}" stroke-width="1.2"><circle cx="17" cy="11" r="3"/><circle cx="20" cy="17" r="3"/><circle cx="40" cy="21" r="3"/><circle cx="43" cy="27" r="3"/></g>
+    <path d="M17 11 L20 17 M40 21 L43 27" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+  leon: () => `${suelo}
+    <path d="M2 24 H20 M6 32 H22 M2 40 H18" stroke="#B5A89E" stroke-width="1.4" stroke-linecap="round"/>
+    ${nina(26, 15, 1, 'o', 'corre')}
+    <g fill="#fff" stroke="#B5A89E" stroke-width="1"><circle cx="58" cy="50" r="3"/><circle cx="64" cy="48" r="2.4"/></g>
+    <g transform="translate(112 8)">
+      <g fill="#E3D2C2" stroke="${INK}" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><circle cx="38" cy="8" r="6"/></g>
+      <ellipse cx="23" cy="25" rx="21" ry="18" fill="#F5E4D8" stroke="${INK}" stroke-width="1.4"/>
+      <ellipse cx="23" cy="34" rx="9" ry="7" fill="#fff" stroke="${INK}" stroke-width="1.2"/>
+      <path d="M19.5 29 L26.5 29 L23 33 Z" fill="${INK}"/>
+      <path d="M10 18 L18 21.5 M36 18 L28 21.5" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="15" cy="23.5" r="1.5" fill="${INK}"/><circle cx="31" cy="23.5" r="1.5" fill="${INK}"/>
+      <path d="M18 38 L20.5 41 L23 38 L25.5 41 L28 38" fill="none" stroke="${INK}" stroke-width="1.1" stroke-linejoin="round"/>
+    </g>`,
+  pinturas: () => `<rect x="-2" y="-4" width="168" height="64" rx="10" fill="#E3D2C2"/>
+    <g transform="translate(14 6)" fill="${OC}">
+      <path d="M6 30 C2 20 8 10 20 9 C26 3 38 4 42 12 C48 14 52 20 50 30 Z"/>
+      <path d="M6 26 C2 26 0 20 4 16 C6 14 9 15 10 18 Z"/>
+      <rect x="10" y="28" width="4" height="10" rx="1.5"/><rect x="18" y="28" width="4" height="10" rx="1.5"/><rect x="36" y="28" width="4" height="10" rx="1.5"/><rect x="44" y="28" width="4" height="10" rx="1.5"/>
+      <path d="M5 15 C2 12 2 9 4 7" fill="none" stroke="${OC}" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+    <g fill="${OC}" opacity=".45"><circle cx="86" cy="10" r="1.6"/><circle cx="80" cy="22" r="1.4"/><circle cx="84" cy="36" r="1.6"/><circle cx="110" cy="8" r="1.4"/><circle cx="116" cy="22" r="1.6"/><circle cx="112" cy="38" r="1.4"/><circle cx="96" cy="44" r="1.6"/></g>
+    <use href="#d-mano" transform="translate(78 4) scale(1.05)"/>
+    <path d="M126 44 C126 52 150 52 150 44 Z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M150 46 L158 46" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M138 43 C133 36 137 31 138 26 C140 31 144 36 138 43 Z" fill="${OC}" stroke="${INK}" stroke-width="1"/>`,
+  osa: () => `${suelo}
+    <path d="M22 54 C18 34 44 22 84 22 C126 22 152 36 148 54 Z" fill="#E3D2C2" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+    <g fill="#E3D2C2" stroke="${INK}" stroke-width="1.3"><circle cx="22" cy="30" r="4.5"/><circle cx="40" cy="30" r="4.5"/><circle cx="31" cy="41" r="13"/></g>
+    <ellipse cx="24" cy="46" rx="6.5" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.2"/>
+    <ellipse cx="20" cy="44.5" rx="2" ry="1.5" fill="${INK}"/>
+    <path d="M27 37.5 q2.5 2 5 0 M34 37.5 q2.5 2 5 0" fill="none" stroke="${INK}" stroke-width="1.2" stroke-linecap="round"/>
+    <text x="10" y="18" font-family="Fredoka, sans-serif" font-weight="600" font-size="12" fill="#6B5A4E">Z z z</text>
+    ${nina(90, -1, .68, 'o', 'arriba')}`,
+  fiesta: () => `${suelo}
+    ${nina(22, 13, 1, 'g', 'arriba')}
+    <path d="M66 54 L94 46 M66 46 L94 54" stroke="${INK}" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M80 48 C70 40 72 30 76 22 C78 28 81 30 82 32 C83 26 84 20 82 12 C92 22 94 34 88 44 C86 47 83 48 80 48 Z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M80 48 C76 46 75 42 77 38 C78 40 80 41 81 41 C82 38 82 36 82 34 C86 38 87 42 85 45 C84 47 82 48 80 48 Z" fill="${OC}"/>
+    <use href="#d-mano" transform="translate(116 6) scale(1.05)"/>
+    ${estrella(12, 8)}${estrella(56, 14, .8)}${estrella(106, 36, .7)}${estrella(158, 10, .8)}`
+};
+function svgDibujo(k){
+  const f = DIBUJOS[k];
+  return f ? `<svg viewBox="-2 -4 168 64" role="img" aria-hidden="true">${f()}</svg>` : '';
+}
+
+/* ============================================================
+   KIT — piezas sueltas del UI kit. Una escena se COMPONE con:
+   fondo + protagonista (con su expresión) + elementos.
+     img/kit/<kit>/fondos|animales|clan|objetos/<nombre>.webp   (por época)
+     img/kit/<kit>/<usuario>/<expresion>.webp                   (la prota)
+     img/kit/comun/chewie|fx/<nombre>.webp                      (sirve en todas)
+   Si una pieza no existe, simplemente no se pinta.
+   ============================================================ */
+const KIT_IDX = {
+  animales: 'mamut reno bisonte oso lobo jabali ciervo liebre ave pez leon',
+  clan: 'papa mama hermano abuela abuelo',
+  objetos: 'lanza propulsor cuchillo hueso rama antorcha bolsa carne bayas plantas silex piel trampa fuego refugio cueva huellas piedras nieve',
+  fx: 'estrella exclamacion interrogacion musica zzz lineas nube copo gotas flecha piedritas hierba huella corazon garabato'
+};
+const KIT_DIR = {};
+Object.keys(KIT_IDX).forEach(d => KIT_IDX[d].split(' ').forEach(n => { if(!KIT_DIR[n]) KIT_DIR[n] = d; }));
+const KIT_COMUN = ['chewie', 'fx', 'finales'];
+const KIT_ALTO = { animales:.62, clan:.74, objetos:.34, fx:.24, prota:.68,
+  mamut:.88, bisonte:.6, oso:.62, lobo:.5, jabali:.44, liebre:.4, ave:.3, pez:.26, hermano:.6, abuela:.62, fuego:.4, refugio:.5, cueva:.5 };
+const norm = s => String(s == null ? '' : s).trim().toLowerCase();
+function kitSrc(kit, nombre){
+  let n = norm(nombre), d;
+  if(n.indexOf('/') > 0){ d = n.split('/')[0]; n = n.split('/')[1]; } else d = KIT_DIR[n] || 'objetos';
+  return { src: KIT_COMUN.indexOf(d) >= 0 ? `img/kit/comun/${d}/${n}.webp` : `img/kit/${kit}/${d}/${n}.webp`, dir:d, n:n };
+}
+const chewieSrc = (pose) => `img/kit/comun/chewie/${pose}.webp`;
+function kitImg(src, alto, cls){
+  return `<img class="kit-img ${cls || ''}" src="${esc(src)}" alt="" style="--h:${Math.round(alto * 100)}%">`;
+}
+/** Escena compuesta. o = {fondo, prota, elementos} */
+function componer(kit, o){
+  let act = '';
+  if(o.prota) act += kitImg(`img/kit/${kit}/${norm(state.user || 'gina')}/${norm(o.prota)}.webp`, KIT_ALTO.prota);
+  String(o.elementos || '').split(',').map(norm).filter(Boolean).forEach(el => {
+    const k = kitSrc(kit, el);
+    act += kitImg(k.src, KIT_ALTO[k.n] || KIT_ALTO[k.dir] || .5, k.dir === 'fx' ? 'arriba' : '');
+  });
+  const fondo = o.fondo ? `<img class="kit-img fondo" src="img/kit/${kit}/fondos/${norm(o.fondo)}.webp" alt="">` : '';
+  return `<div class="esc">${fondo}<div class="actores">${act}</div></div>`;
+}
+const tieneKit = (o) => !!(o && (o.fondo || o.prota || o.elementos));
+const kitDe = (aid) => norm((aventura(aid) || {}).kit) || 'paleolitico';
+
+/* Prioridad: imagen propia (columna imagen) → escena compuesta → dibujo SVG → emoji. */
+const FALTAN = new Set(), PLAN_B = [];
+function planDe(kit, o){
+  if(tieneKit(o)) return { html: componer(kit, o), kit: true };
+  const s = svgDibujo(o.dibujo);
+  return { html: s || `<div class="emo">${esc(o.emoji || '✨')}</div>`, kit: false };
+}
+/* Las imágenes de escena son de la jugadora BASE (Gina). Si otra jugadora tiene su propia
+   versión en img/escenas/<usuario>/<fichero>, se usa esa; si no, la de Gina. */
+const USUARIO_BASE = () => norm(state.config.usuario_base) || 'gina';
+function ilus(kit, o, carpeta){
+  const plan = planDe(kit, o);
+  const f = String(o.imagen || '').trim();
+  const base = f ? `img/${carpeta}/${f}` : '';
+  if(!base || FALTAN.has(base)) return `<div class="ilus ${plan.kit ? 'kit' : ''}">${plan.html}</div>`;
+  const propia = (carpeta === 'escenas' && state.user && state.user !== USUARIO_BASE()) ? `img/${carpeta}/${state.user}/${f}` : '';
+  const src = propia && !FALTAN.has(propia) ? propia : base;
+  const i = PLAN_B.push(plan) - 1;
+  return `<div class="ilus foto" data-pb="${i}" ${src !== base ? `data-base="${esc(base)}"` : ''}><img src="${esc(src)}" alt="" class="ilus-img"></div>`;
+}
+document.addEventListener('error', function(e){
+  const im = e.target;
+  if(!im || !im.classList) return;
+  if(im.classList.contains('kit-img')){ im.remove(); return; }
+  if(!im.classList.contains('ilus-img')) return;
+  FALTAN.add(im.getAttribute('src'));
+  const box = im.parentNode;
+  if(box.dataset.base && !FALTAN.has(box.dataset.base)){ im.src = box.dataset.base; delete box.dataset.base; return; }
+  const plan = PLAN_B[box.dataset.pb] || { html:'', kit:false };
+  box.classList.remove('foto'); box.classList.toggle('kit', plan.kit); box.innerHTML = plan.html;
+}, true);
+const ilusEscena = (aid, e) => ilus(kitDe(aid), e, 'escenas');
+const ilusAventura = (a) => ilus(norm(a.kit) || 'paleolitico', a, 'aventuras');
+
+/* ============================================================
+   AVENTURA DE EJEMPLO — la misma que siembra setup() en el Sheet.
+   Sirve para jugar sin backend y como plantilla.
+   ============================================================ */
+const SEED = {
+  config: {},
+  usuarios: [{ username:'gina', nombre:'Gina', avatar:'kit/paleolitico/gina/contenta.webp', color:'#F6C445', activo:true }],
+  aventuras: [{
+    id:'paleolitico', titulo:'Paleolítico', epoca:'Hace 15.000 años · Edad de Hielo',
+    intro:'Vives con tu clan de cazadores-recolectores. Hace frío, hay mamuts… y todos tienen hambre. ¿Sobrevivirás?',
+    color:'#9CCBE8', emoji:'🦣', dibujo:'portada_hielo', kit:'paleolitico',
+    fondo:'montanas', prota:'entusiasmada', elementos:'mamut', imagen:'paleolitico_portada.webp', orden:1, activa:true
+  }],
+  escenas: [
+    ['paleolitico',1,'decision','¡A por comida!','Hace 15.000 años, en plena Edad de Hielo. Tu clan tiene hambre y hoy tú vas a ayudar. ¿Qué te llevas?','Hacía mucho más frío que hoy y el norte de Europa estaba cubierto de hielo.','Lanza y propulsor',2,'Bolsa de piel para recoger frutos',3,'campamento','🏕️','','campamento','normal','bolsa'],
+    ['paleolitico',2,'decision','¡Renos!','Una manada de renos cruza el valle. ¡Comida para muchos días!','Los renos eran una de sus presas favoritas: daban carne, piel, huesos y astas.','Acercarte despacio, con el viento de cara',5,'Correr gritando «¡A POR ELLOS!»',4,'renos','🦌','','valle','entusiasmada','reno,reno'],
+    ['paleolitico',3,'decision','¿Qué bayas?','Hay unas bayas rojas superbrillantes y otras oscuras: las que siempre coge la abuela.','Además de cazar, recolectaban bayas, raíces, frutos secos y setas.','Las rojas, ¡qué bonitas!',6,'Las de la abuela',7,'bayas','🫐','','bosque','pensando','abuela,bayas'],
+    ['paleolitico',4,'fin','¡Estampida!','Los renos se asustan y salen corriendo… ¡por encima de ti! Te quedas plana como una tortita.','Cazaban en silencio y con el viento de cara, para que los animales no los olieran.','',0,'',0,'estampida','🦌','¡PLAF!','valle','mareada','reno,huellas'],
+    ['paleolitico',5,'decision','¡Un mamut!','Un mamut lanudo, grande como un elefante, te tapa el camino. Come hierba tan tranquilo.','El mamut lanudo tenía pelo largo, orejas pequeñas y una capa de grasa para aguantar el frío.','Pasar por debajo: ¡cabes!',8,'Rodearlo despacito',9,'mamut','🦣','','nieve','sorpresa','mamut'],
+    ['paleolitico',6,'fin','Bayas traicioneras','¡Eran venenosas! Pasas tres días con dolor de barriga… escondida detrás de un arbusto.','Los mayores enseñaban a los niños qué plantas se podían comer y cuáles no.','',0,'',0,'barriga','🤢','¡GRRRUÑ!','bosque','asco','bayas'],
+    ['paleolitico',7,'decision','¡Tormenta!','Ya tienes la bolsa llena, pero empieza a nevar muchísimo y se hace de noche.','Con tormenta buscaban refugio en cuevas y abrigos de roca.','Meterte en una cueva',10,'Seguir andando a ciegas',11,'tormenta','🌨️','','nieve','miedo','copo,cueva'],
+    ['paleolitico',8,'fin','¡Pisotón!','El mamut ni te ve. Da un pasito… y te quedas plana como una alfombra.','Un mamut lanudo pesaba más que cuatro coches juntos. ¡Mejor mirarlo de lejos!','',0,'',0,'pisoton','🦣','¡PLOF!','valle','mareada','mamut,estrella'],
+    ['paleolitico',9,'decision','¡Zas!','Papá lanza con el propulsor y caza un reno. ¡Bravo! ¿Cómo lo lleváis al campamento?','El propulsor es un palo con gancho que hace volar la lanza más lejos y más rápido.','Despiezarlo y cargarlo entre todos',12,'Dejarlo solo e ir a por ayuda',13,'zas','🎯','','valle','celebrando','papa,reno'],
+    ['paleolitico',10,'decision','¡Qué oscuro!','Dentro de la cueva no se ve nada. Y al fondo se oye un ruido muy raro…','Hacían fuego golpeando sílex contra pirita: ¡saltan chispas!','Hacer fuego con sílex y pirita',14,'Ir al fondo a ver qué es',15,'oscuro','🕳️','','cueva_dentro','miedo','interrogacion'],
+    ['paleolitico',11,'fin','Hielo fino','Pisas hielo fino y… ¡al agua helada! Sales tiesa como un polo de hielo.','Para no congelarse llevaban ropa de piel cosida con agujas de hueso.','',0,'',0,'hielo','🧊','¡CRAAAC!','rio','llorando','nieve,gotas'],
+    ['paleolitico',12,'decision','El río helado','Lleváis carne, piel, huesos y tendones: ¡todo se aprovecha! Ahora hay que cruzar el río.','Con los tendones hacían hilo, y con los huesos, agujas y herramientas.','Por el hielo: ¡es más corto!',11,'Saltando por las piedras',16,'rio','🏞️','','rio','contenta','carne,piedras'],
+    ['paleolitico',13,'fin','¡Un león!','Un león de las cavernas huele la comida. Corres tanto que llegas a casa… ¡sin nada!','Los leones de las cavernas casi no tenían melena. ¡Así los pintaron en la cueva de Chauvet (Francia)!','',0,'',0,'leon','🦁','¡GRRR!','bosque','corriendo','leon,huellas'],
+    ['paleolitico',14,'decision','¡Pinturas!','Con la luz del fuego ves bisontes pintados en la pared. ¡Qué pasada! Al amanecer, toca volver.','Iluminaban las cuevas con lámparas de piedra que quemaban grasa animal.','Seguir unas huellas de gato gigante',13,'Volver por el camino de siempre',16,'pinturas','🎨','','cueva_dentro','asombrada','antorcha'],
+    ['paleolitico',15,'fin','La osa dormilona','Era una osa durmiendo. Te sientas encima sin querer… y se despierta de MUY mal humor.','Los osos pardos pasan el invierno durmiendo dentro de las cuevas.','',0,'',0,'osa','🐻','¡UY!','cueva_dentro','asustada','oso,zzz'],
+    ['paleolitico',16,'final','¡Lo lograste!','Toda la familia cena junto al fuego, el abuelo toca una flauta de hueso y tú pintas tu mano en la cueva. ¡Eres una aventurera de la Edad de Hielo!','Pintaban manos soplando ocre alrededor, como en la cueva de El Castillo (Cantabria).','',0,'',0,'fiesta','🔥','¡HURRA!','campamento','celebrando','fuego,mama,papa']
+  ].map(r => ({ aventura_id:r[0], num:r[1], tipo:r[2], titulo:r[3], texto:r[4], dato:r[5],
+               opcion_a:r[6], destino_a:r[7], opcion_b:r[8], destino_b:r[9], dibujo:r[10], emoji:r[11], sonido:r[12],
+               fondo:r[13], prota:r[14], elementos:r[15], imagen:'paleolitico_' + String(r[1]).padStart(2, '0') + '.webp' }))
+};
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+const state = {
+  config: {}, aventuras: [], escenas: {},   // escenas[aid][num] = escena
+  partidas: leer(LS.partidas, []),          // [{id, ts, aventura_id, recorrido:'1-2-5', final}]
+  juegosTodos: leer(LS.juegos, {}),        // por usuario y aventura: {gina:{paleolitico:{camino:[1,2], elecciones:['a']}}}
+  usuarios: [], user: leer(LS.user, ''),
+  juegoAid: null, mapaAid: null, mapaVolver: 'inicio', screen: 'inicio', ultimoNuevo: 0
+};
+
+function normaliza(data){
+  const d = data || {};
+  const cfg = {};
+  if(Array.isArray(d.config)) d.config.forEach(r => { if(r && r.clave) cfg[r.clave] = r.valor; });
+  else Object.assign(cfg, d.config || {});
+  state.config = cfg;
+  state.usuarios = (d.usuarios || []).filter(u => u && u.username && (u.activo === undefined || u.activo === '' || truthy(u.activo)))
+    .map(u => Object.assign({}, u, { username:norm(u.username) }));
+  state.aventuras = (d.aventuras || [])
+    .filter(a => a && a.id && (a.activa === undefined || a.activa === '' || truthy(a.activa)))
+    .map(a => Object.assign({}, a, { id:String(a.id).trim() }))
+    .sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99));
+  state.escenas = {};
+  (d.escenas || []).forEach(e => {
+    if(!e || !e.aventura_id || !e.num) return;
+    const aid = String(e.aventura_id).trim(), n = Number(e.num);
+    (state.escenas[aid] = state.escenas[aid] || {})[n] = Object.assign({}, e, {
+      num:n, tipo:String(e.tipo || 'decision').trim().toLowerCase(),
+      destino_a:Number(e.destino_a) || 0, destino_b:Number(e.destino_b) || 0
+    });
+  });
+}
+const aventura = (aid) => state.aventuras.find(a => a.id === aid);
+function J(){ const u = state.user || '_'; return state.juegosTodos[u] = state.juegosTodos[u] || {}; }
+const guardarJuegos = () => guardar(LS.juegos, state.juegosTodos);
+const yo = () => state.usuarios.find(u => u.username === state.user) || { username:state.user, nombre:state.user };
+const escenasDe = (aid) => state.escenas[aid] || {};
+const esFinal = (e) => e && (e.tipo === 'fin' || e.tipo === 'final');
+function finalesDe(aid){ return Object.values(escenasDe(aid)).filter(esFinal).sort((a, b) => a.num - b.num); }
+function partidasDe(aid){ return state.partidas.filter(p => p.aventura_id === aid && norm(p.jugadora) === state.user); }
+function descubiertos(aid){ const m = {}; partidasDe(aid).forEach(p => { m[p.final] = (m[p.final] || 0) + 1; }); return m; }
+function visitadas(aid){
+  const s = new Set();
+  partidasDe(aid).forEach(p => String(p.recorrido || '').split('-').forEach(n => n && s.add(Number(n))));
+  const j = J()[aid]; if(j) j.camino.forEach(n => s.add(n));
+  return s;
+}
+function inicio(aid){ const e = escenasDe(aid); return e[1] ? 1 : Math.min.apply(null, Object.keys(e).map(Number)); }
+
+/* ============================================================
+   NAVEGACIÓN
+   ============================================================ */
+function goScreen(s){
+  state.screen = s;
+  $$('.screen').forEach(el => el.classList.toggle('active', el.id === 's-' + s));
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+  $('#nav').classList.toggle('oculta', s === 'juego' || s === 'mapa' || s === 'quien');
+  if(s === 'quien') renderQuien();
+  if(s === 'inicio') renderInicio();
+  if(s === 'finales') renderFinales();
+  if(s === 'datos') renderDatos();
+  if(s === 'mapa') renderMapa();
+  window.scrollTo(0, 0);
+}
+$('#nav').addEventListener('click', e => { const b = e.target.closest('button[data-s]'); if(b) goScreen(b.dataset.s); });
+
+/* ============================================================
+   ¿QUIÉN ERES?
+   ============================================================ */
+const avatarSrc = (u) => u.avatar ? 'img/' + String(u.avatar).trim() : `img/kit/paleolitico/${u.username}/contenta.webp`;
+function renderQuien(){
+  let h = `<div class="logo" style="margin-top:20px"><small>ESCOGE TU PROPIA</small><b>AVENTUR<span>App</span></b></div>
+    <h2 style="text-align:center;font-size:26px;margin:18px 0 6px">¿Quién eres?</h2>
+    <p class="muted" style="text-align:center;margin:0 0 10px">Toca tu dibujo para empezar.</p><div class="quien">`;
+  state.usuarios.forEach(u => {
+    h += `<button class="card u" data-user="${esc(u.username)}" style="background:${esc(u.color || '#FFFDF8')}">
+      <img src="${esc(avatarSrc(u))}" alt="" class="kit-img">${esc(u.nombre || u.username)}</button>`;
+  });
+  $('#s-quien').innerHTML = h + `</div>`;
+}
+$('#s-quien').addEventListener('click', e => {
+  const b = e.target.closest('[data-user]'); if(!b) return;
+  state.user = b.dataset.user; guardar(LS.user, state.user);
+  goScreen('inicio');
+});
+function elegirUsuario(){ state.user = ''; guardar(LS.user, ''); goScreen('quien'); }
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+function renderInicio(){
+  const u = yo();
+  let h = `<div class="logo"><small>ESCOGE TU PROPIA</small><b>AVENTUR<span>App</span></b></div>
+    <div class="yo"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><p><b>¡Hola, ${esc(u.nombre || 'exploradora')}!</b><br>Cada decisión cambia la historia.</p></div>`;
+  if(!state.aventuras.length) h += `<div class="vacio card">Todavía no hay aventuras. Añade una en el Sheet.</div>`;
+  state.aventuras.forEach(a => {
+    const fins = finalesDe(a.id), desc = descubiertos(a.id);
+    const n = fins.filter(f => desc[f.num]).length;
+    const j = J()[a.id], enCurso = j && j.camino.length > 1 && !esFinal(escenasDe(a.id)[j.camino[j.camino.length - 1]]);
+    h += `<article class="card av" style="--av:${esc(a.color || '#9CCBE8')}">
+      <div class="av-ilus">${ilusAventura(a)}</div>
+      <div class="av-b">
+        <div class="av-epoca">${esc(a.epoca || '')}</div>
+        <h2>${esc(a.titulo)}</h2>
+        <p class="av-intro">${esc(a.intro || '')}</p>
+        <div class="av-prog"><div class="sellitos" aria-hidden="true">${fins.map(f => `<i class="${desc[f.num] ? 'ok' : ''} ${f.tipo === 'final' ? 'fz' : ''}"></i>`).join('')}</div>
+          <span>${n} de ${fins.length} finales</span></div>
+        <div class="av-acc">
+          <button class="btn prim" data-jugar="${esc(a.id)}">${enCurso ? 'Seguir' : (partidasDe(a.id).length ? 'Jugar otra vez' : '¡Jugar!')}</button>
+          <button class="btn" data-mapa="${esc(a.id)}" aria-label="Ver el mapa">${icoMapa}</button>
+        </div>
+      </div></article>`;
+  });
+  h += pie();
+  $('#s-inicio').innerHTML = h;
+}
+const icoMapa = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6 L9 4 L15 6 L21 4 L21 18 L15 20 L9 18 L3 20 Z M9 4 V18 M15 6 V20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+const icoAtras = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const icoTijera = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 8.5 L20 18 M8.5 15.5 L20 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+
+function pie(){
+  return `<div class="pie"><div class="fila">
+      <button class="btn chico" id="btnQuien">Cambiar de jugador</button>
+      <button class="btn chico" id="btnActualizar">♻️ Actualizar app</button>
+      <button class="btn chico" id="btnBorrar">Borrar progreso</button></div>
+    <span>AVENTURApp v${APP_VERSION}${BACKEND_URL ? '' : ' · modo local'}</span></div>`;
+}
+
+$('#s-inicio').addEventListener('click', e => {
+  const j = e.target.closest('[data-jugar]'); if(j) return abrirJuego(j.dataset.jugar);
+  const m = e.target.closest('[data-mapa]'); if(m) return abrirMapa(m.dataset.mapa, 'inicio');
+  if(e.target.closest('#btnActualizar')) return forzarActualizacion();
+  if(e.target.closest('#btnQuien')) return elegirUsuario();
+  const b = e.target.closest('#btnBorrar');
+  if(b){
+    if(!b.dataset.seguro){ b.dataset.seguro = '1'; b.textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { if(b.isConnected){ delete b.dataset.seguro; b.textContent = 'Borrar progreso'; } }, 3500); return; }
+    borrarProgreso();
+  }
+});
+
+/* ============================================================
+   JUEGO — el rollo de papel
+   ============================================================ */
+function abrirJuego(aid){
+  const j = J()[aid];
+  const ult = j && escenasDe(aid)[j.camino[j.camino.length - 1]];
+  if(!j || esFinal(ult)) nuevoJuego(aid, false);
+  state.juegoAid = aid; state.ultimoNuevo = 0;
+  goScreen('juego'); renderJuego();
+}
+function nuevoJuego(aid, pintar){
+  J()[aid] = { camino:[inicio(aid)], elecciones:[] };
+  guardarJuegos();
+  if(pintar){ state.ultimoNuevo = 0; renderJuego(); window.scrollTo(0, 0); }
+}
+function renderJuego(){
+  const aid = state.juegoAid, a = aventura(aid), j = J()[aid], E = escenasDe(aid);
+  if(!a || !j){ goScreen('inicio'); return; }
+  let h = `<div class="topbar"><button class="ico-btn" data-acc="salir" aria-label="Volver">${icoAtras}</button>
+    <h1>${esc(a.titulo)}</h1><button class="ico-btn" data-acc="mapa" aria-label="Mapa">${icoMapa}</button></div><div class="rollo">`;
+  j.camino.forEach((num, i) => {
+    const e = E[num], ult = i === j.camino.length - 1;
+    if(i > 0) h += `<div class="corte">${icoTijera}desenrolla</div>`;
+    if(!e){ h += `<article class="pan"><p class="txt">Esta parte de la historia todavía no existe (escena ${num}).</p>
+      <button class="btn full" data-acc="deshacer">↩ Volver atrás</button></article>`; return; }
+    h += panel(aid, e, ult ? null : j.elecciones[i], ult, ult && num === state.ultimoNuevo);
+  });
+  h += `</div>`;
+  $('#s-juego').innerHTML = h;
+}
+function panel(aid, e, elegida, activa, nuevo){
+  const fin = esFinal(e), feliz = e.tipo === 'final';
+  let h = `<article class="pan ${fin ? (feliz ? 'final' : 'fin') : ''} ${nuevo ? 'nuevo' : ''}">
+    <div class="pan-h"><span class="num">${e.num}</span><h2>${esc(e.titulo)}</h2>${e.sonido ? `<span class="sonido" aria-hidden="true">${esc(e.sonido)}</span>` : ''}</div>
+    ${ilusEscena(aid, e)}
+    <p class="txt">${esc(e.texto)}</p>`;
+  if(!fin){
+    if(e.dato) h += `<details class="sabias"><summary><img src="${chewieSrc('oliendo')}" alt="" class="kit-img">Chewie sabe algo…</summary>
+      <div class="chewie" style="margin-top:6px"><img src="${chewieSrc('explorando')}" alt="" class="kit-img"><div class="bur"><b>¿Sabías que…?</b> ${esc(e.dato)}</div></div></details>`;
+    h += `<div class="ops">` + ['a', 'b'].filter(k => e['opcion_' + k]).map(k => {
+      const cls = elegida ? (elegida === k ? 'elegida' : 'descartada') : '';
+      return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
+    }).join('') + `</div>`;
+    if(activa && J()[aid].camino.length > 1) h += `<div style="margin-top:12px;text-align:center"><button class="btn chico" data-acc="deshacer">↩ Me arrepiento</button></div>`;
+  } else {
+    const desc = descubiertos(aid), fins = finalesDe(aid);
+    h += `<div class="sello">${feliz ? '¡FINAL FELIZ!' : 'FIN'}</div>`;
+    if(nuevo && desc[e.num] === 1) h += `<div class="nuevo-final">⭐ ¡Final nuevo! Llevas ${fins.filter(f => desc[f.num]).length} de ${fins.length}</div>`;
+    if(e.dato) h += `<div class="chewie"><img src="${chewieSrc(feliz ? 'comiendo' : 'sentado')}" alt="" class="kit-img">
+      <div class="bur"><b>${feliz ? '¡Lo logramos!' : '¡Ánimo! Prueba otro camino.'}</b><br><b>Dato real:</b> ${esc(e.dato)}</div></div>`;
+    if(activa) h += `<div class="fin-acc">
+      ${feliz ? '' : `<button class="btn sun full" data-acc="deshacer">↩ Volver a la última decisión</button>`}
+      <button class="btn prim full" data-acc="otra">Empezar de nuevo</button>
+      <button class="btn full" data-acc="mapa">Ver mi camino en el mapa</button></div>`;
+  }
+  return h + `</article>`;
+}
+$('#s-juego').addEventListener('click', e => {
+  const op = e.target.closest('[data-op]'); if(op) return elegir(op.dataset.op);
+  const a = e.target.closest('[data-acc]'); if(!a) return;
+  const acc = a.dataset.acc, aid = state.juegoAid;
+  if(acc === 'salir') goScreen('inicio');
+  if(acc === 'mapa') abrirMapa(aid, 'juego');
+  if(acc === 'otra') nuevoJuego(aid, true);
+  if(acc === 'deshacer') deshacer();
+});
+function elegir(k){
+  const aid = state.juegoAid, j = J()[aid], E = escenasDe(aid);
+  const e = E[j.camino[j.camino.length - 1]], dest = e && e['destino_' + k];
+  if(!dest) return;
+  j.elecciones.push(k); j.camino.push(dest);
+  state.ultimoNuevo = dest;
+  const sig = E[dest];
+  if(esFinal(sig)) registrarPartida(aid, j.camino.slice(), dest);
+  guardarJuegos();
+  renderJuego();
+  const pans = $$('#s-juego .pan'); const ult = pans[pans.length - 1];
+  if(ult) setTimeout(() => ult.scrollIntoView({ behavior:'smooth', block:'start' }), 60);
+  if(esFinal(sig)){
+    try { navigator.vibrate && navigator.vibrate(sig.tipo === 'final' ? [60, 60, 60] : 120); } catch(err){}
+    if(sig.tipo === 'final') confeti();
+  }
+}
+function deshacer(){
+  const j = J()[state.juegoAid];
+  if(!j || j.camino.length < 2) return;
+  j.camino.pop(); j.elecciones.pop();
+  guardarJuegos();
+  state.ultimoNuevo = 0; renderJuego();
+  const pans = $$('#s-juego .pan'); const ult = pans[pans.length - 1];
+  if(ult) ult.scrollIntoView({ block:'start' });
+}
+function confeti(){
+  const c = document.createElement('div'); c.className = 'confeti';
+  const cols = ['#D9653B', '#F6C445', '#8CC7A1', '#9CCBE8', '#F2A7A0'];
+  for(let i = 0; i < 40; i++){
+    const p = document.createElement('i');
+    p.style.left = Math.random() * 100 + '%';
+    p.style.background = cols[i % cols.length];
+    p.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+    p.style.animationDelay = (Math.random() * .5) + 's';
+    c.appendChild(p);
+  }
+  document.body.appendChild(c); setTimeout(() => c.remove(), 3600);
+}
+
+/* ============================================================
+   ÁLBUM DE FINALES
+   ============================================================ */
+function renderFinales(){
+  let h = `<h1 style="font-size:28px;margin:6px 0 4px">Álbum de finales</h1><p class="muted" style="margin:0 0 16px">¿Los encontrarás todos? Algunos son desastres muy graciosos.</p>`;
+  state.aventuras.forEach(a => {
+    const fins = finalesDe(a.id), desc = descubiertos(a.id), n = fins.filter(f => desc[f.num]).length;
+    h += `<div class="card contador"><b>${n}<small>/${fins.length}</small></b><p><strong>${esc(a.titulo)}</strong><br>${n === fins.length ? '¡Los tienes todos! Eres una experta.' : 'Te faltan ' + (fins.length - n) + '. Prueba caminos distintos.'}</p></div><div class="grid2">`;
+    fins.forEach(f => {
+      const veces = desc[f.num];
+      if(!veces) h += `<div class="card fz-card oculto"><div class="q">?</div><div style="font-family:var(--fd);font-weight:600">${f.tipo === 'final' ? 'Final feliz secreto' : 'Final secreto'}</div></div>`;
+      else h += `<div class="card fz-card ${f.tipo === 'final' ? 'feliz' : ''}">${ilusEscena(a.id, f)}
+        <h3>${esc(f.titulo)}</h3><span class="tag">${f.tipo === 'final' ? 'FINAL FELIZ' : 'FIN'}</span>
+        <span class="veces">${veces === 1 ? 'Lo encontraste 1 vez' : 'Lo encontraste ' + veces + ' veces'}</span></div>`;
+    });
+    h += `</div>`;
+  });
+  $('#s-finales').innerHTML = h;
+}
+
+/* ============================================================
+   CUADERNO DE DATOS
+   ============================================================ */
+function renderDatos(){
+  let h = `<h1 style="font-size:28px;margin:6px 0 4px">Cuaderno de datos</h1><p class="muted" style="margin:0 0 16px">Cada escena que visitas te regala un dato real de la historia.</p>`;
+  state.aventuras.forEach(a => {
+    const vis = visitadas(a.id);
+    const conDato = Object.values(escenasDe(a.id)).filter(e => e.dato).sort((x, y) => x.num - y.num);
+    const n = conDato.filter(e => vis.has(e.num)).length;
+    h += `<div class="card contador"><b>${n}<small>/${conDato.length}</small></b><p><strong>${esc(a.titulo)}</strong><br>${n === conDato.length ? '¡Cuaderno completo!' : 'Datos descubiertos'}</p></div>`;
+    conDato.forEach(e => {
+      if(vis.has(e.num)) h += `<div class="card dt"><span class="num">${e.num}</span><div><h3>${esc(e.titulo)}</h3><p>${esc(e.dato)}</p></div></div>`;
+      else h += `<div class="card dt oculto"><span class="num">?</span><div><h3>Dato escondido</h3><p>Sigue explorando para descubrirlo.</p></div></div>`;
+    });
+  });
+  $('#s-datos').innerHTML = h;
+}
+
+/* ============================================================
+   MAPA DEL CAMINO — árbol de escenas, sin destripar lo no visto
+   ============================================================ */
+function abrirMapa(aid, volver){ state.mapaAid = aid; state.mapaVolver = volver || 'inicio'; goScreen('mapa'); }
+function niveles(E){
+  const lvl = {}, q = [inicio(state.mapaAid)]; lvl[q[0]] = 0;
+  while(q.length){
+    const n = q.shift(), e = E[n]; if(!e) continue;
+    [e.destino_a, e.destino_b].forEach(d => { if(d && E[d] && lvl[d] === undefined){ lvl[d] = lvl[n] + 1; q.push(d); } });
+  }
+  const max = Math.max.apply(null, Object.values(lvl).concat([0]));
+  Object.keys(E).forEach(n => { if(lvl[n] === undefined) lvl[n] = max + 1; });
+  return lvl;
+}
+function renderMapa(){
+  const aid = state.mapaAid, a = aventura(aid), E = escenasDe(aid);
+  if(!a){ goScreen('inicio'); return; }
+  const vis = visitadas(aid), lvl = niveles(E);
+  const filas = {};
+  Object.keys(E).map(Number).sort((x, y) => x - y).forEach(n => { (filas[lvl[n]] = filas[lvl[n]] || []).push(n); });
+  const W = 340, RH = 74, R = 17, pos = {};
+  const nf = Object.keys(filas).length;
+  Object.keys(filas).forEach(l => { const f = filas[l]; f.forEach((n, i) => { pos[n] = { x: (i + 1) * W / (f.length + 1), y: 34 + Number(l) * RH }; }); });
+  const H = 34 + (nf - 1) * RH + 34;
+  /* El camino a resaltar: la partida en curso o la última terminada. */
+  const j = J()[aid];
+  let camino = j ? j.camino : [];
+  if(camino.length < 2){ const ps = partidasDe(aid); if(ps.length) camino = String(ps[ps.length - 1].recorrido).split('-').map(Number); }
+  const enCamino = new Set(); for(let i = 1; i < camino.length; i++) enCamino.add(camino[i - 1] + '>' + camino[i]);
+  let lines = '', nodes = '';
+  Object.keys(E).map(Number).forEach(n => {
+    if(!vis.has(n)) return;
+    const e = E[n];
+    [e.destino_a, e.destino_b].forEach(d => {
+      if(!d || !pos[d]) return;
+      const p1 = pos[n], p2 = pos[d], on = enCamino.has(n + '>' + d);
+      const my = (p1.y + p2.y) / 2;
+      lines += `<path d="M${p1.x} ${p1.y + R} C${p1.x} ${my + 10} ${p2.x} ${my - 10} ${p2.x} ${p2.y - R}" fill="none" stroke="${on ? OC : '#B5A89E'}" stroke-width="${on ? 4 : 2}" ${on ? '' : 'stroke-dasharray="4 5"'} stroke-linecap="round"/>`;
+    });
+  });
+  Object.keys(E).map(Number).forEach(n => {
+    const p = pos[n], e = E[n], v = vis.has(n);
+    if(!v){ nodes += `<g><circle cx="${p.x}" cy="${p.y}" r="${R}" fill="${'#FBF3E4'}" stroke="#B5A89E" stroke-width="2" stroke-dasharray="4 4"/><text x="${p.x}" y="${p.y + 6}" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="17" fill="#B5A89E">?</text></g>`; return; }
+    const fill = e.tipo === 'final' ? '#F6C445' : e.tipo === 'fin' ? INK : '#FFFDF8';
+    const col = e.tipo === 'fin' ? '#fff' : INK;
+    const ring = camino[camino.length - 1] === n ? `<circle cx="${p.x}" cy="${p.y}" r="${R + 5}" fill="none" stroke="${OC}" stroke-width="2.5"/>` : '';
+    nodes += `<g>${ring}<circle cx="${p.x}" cy="${p.y}" r="${R}" fill="${fill}" stroke="${INK}" stroke-width="2.2"/><text x="${p.x}" y="${p.y + 6}" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="16" fill="${col}">${n}</text></g>`;
+  });
+  const total = Object.keys(E).length;
+  $('#s-mapa').innerHTML = `<div class="topbar"><button class="ico-btn" data-acc="volver" aria-label="Volver">${icoAtras}</button><h1>Mapa · ${esc(a.titulo)}</h1><span style="width:44px"></span></div>
+    <p class="muted" style="margin:0 0 12px;text-align:center">Has visitado ${vis.size} de ${total} escenas. Las <b>?</b> son caminos por descubrir.</p>
+    <div class="card mapa-w"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mapa de escenas">${lines}${nodes}</svg></div>
+    <div class="leyenda"><span><i style="background:#FFFDF8"></i>Escena</span><span><i style="background:${INK}"></i>Fin</span><span><i style="background:#F6C445"></i>Final feliz</span><span><i style="border-style:dashed;border-color:#B5A89E"></i>Sin descubrir</span><span><i style="border-color:${OC};background:${OC}"></i>Tu camino</span></div>`;
+}
+$('#s-mapa').addEventListener('click', e => {
+  if(e.target.closest('[data-acc="volver"]')){
+    if(state.mapaVolver === 'juego'){ goScreen('juego'); renderJuego(); } else goScreen(state.mapaVolver);
+  }
+});
+
+/* ============================================================
+   PROGRESO + BACKEND (Apps Script por GET, como el resto de apps)
+   ============================================================ */
+function registrarPartida(aid, camino, final){
+  const p = { id:uid(), ts:new Date().toISOString(), aventura_id:aid, recorrido:camino.join('-'), final:final, jugadora:state.user };
+  state.partidas.push(p); guardar(LS.partidas, state.partidas);
+  const cola = leer(LS.cola, []); cola.push({ action:'savePartida', payload:p }); guardar(LS.cola, cola);
+  flush();
+}
+async function api(action, params){
+  const q = new URLSearchParams({ action:action });
+  Object.keys(params || {}).forEach(k => q.set(k, typeof params[k] === 'string' ? params[k] : JSON.stringify(params[k])));
+  const r = await fetch(BACKEND_URL + '?' + q.toString(), { redirect:'follow' });
+  const t = await r.text();
+  let j; try { j = JSON.parse(t); } catch(e){ throw new Error('El servidor no respondió bien (¿falta redesplegar el Apps Script?)'); }
+  if(!j.ok) throw new Error(j.error || 'Error del servidor');
+  return j.data;
+}
+let flushing = false;
+async function flush(){
+  if(!BACKEND_URL || flushing) return;
+  flushing = true;
+  try {
+    let cola = leer(LS.cola, []);
+    while(cola.length){
+      await api(cola[0].action, { payload:cola[0].payload });
+      cola.shift(); guardar(LS.cola, cola);
+    }
+  } catch(e){ /* sin red: se reintenta en el próximo arranque */ }
+  flushing = false;
+}
+async function borrarProgreso(){
+  state.partidas = state.partidas.filter(p => norm(p.jugadora) !== state.user); state.juegosTodos[state.user] = {};
+  guardar(LS.partidas, state.partidas); guardarJuegos();
+  if(BACKEND_URL){ try { await api('borrarPartidas', { confirmar:'si', jugadora:state.user }); } catch(e){ toast('Borrado en este móvil. El Sheet no respondió.'); } }
+  toast('Progreso borrado. ¡A empezar de cero!');
+  renderInicio();
+}
+function forzarActualizacion(){
+  const fin = () => location.replace(location.pathname + '?_t=' + Date.now());
+  Promise.resolve()
+    .then(() => navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(rs => Promise.all(rs.map(r => r.unregister()))) : null)
+    .then(() => window.caches ? caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))) : null)
+    .then(() => { try { localStorage.removeItem(LS.datos); } catch(e){} })
+    .catch(() => {}).then(fin);
+}
+function arrancarPantalla(){
+  if(!state.user || !state.usuarios.some(u => u.username === state.user)) goScreen('quien');
+  else goScreen('inicio');
+}
+function repintar(){
+  if(state.screen === 'inicio') renderInicio();
+  if(state.screen === 'finales') renderFinales();
+  if(state.screen === 'datos') renderDatos();
+}
+async function bootstrap(){
+  normaliza(leer(LS.datos, null) || SEED);
+  if(!state.usuarios.length) state.usuarios = SEED.usuarios.slice();
+  arrancarPantalla();
+  if(!BACKEND_URL) return;
+  try {
+    const d = await api('getBootstrap', {});
+    if(d && d.aventuras && d.aventuras.length){ guardar(LS.datos, d); normaliza(d); }
+    /* Partidas: unión por id (lo del Sheet + lo local que aún no subió). */
+    if(d && Array.isArray(d.partidas)){
+      const ids = new Set(state.partidas.map(p => p.id));
+      d.partidas.forEach(p => { if(p && p.id && !ids.has(p.id)) state.partidas.push(Object.assign({}, p, { final:Number(p.final) })); });
+      guardar(LS.partidas, state.partidas);
+    }
+    if(!state.usuarios.length) state.usuarios = SEED.usuarios.slice();
+    if(state.screen === 'quien') renderQuien();
+    else if(state.screen !== 'juego' && state.screen !== 'mapa') repintar();
+    flush();
+  } catch(e){ /* sin red: seguimos con lo guardado */ }
+}
+
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('sw.js', { updateViaCache:'none' }).catch(() => {});
+}
+bootstrap();
+</script>
+</body>
+</html>
