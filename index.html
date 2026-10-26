@@ -89,7 +89,10 @@ h1,h2,h3{font-family:var(--fd);margin:0;line-height:1.1}
 .u img{width:100%;height:120px;object-fit:contain}
 .u:active{transform:translate(3px,3px);box-shadow:none}
 .yo{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 18px}
-.yo img{width:46px;height:46px;object-fit:contain;border:2px solid var(--ink);border-radius:50%;background:var(--sun);padding:2px}
+.yo-av{position:relative;border:0;background:none;padding:0;width:52px;height:52px;flex-shrink:0}
+.yo img{width:52px;height:52px;object-fit:contain;border:2px solid var(--ink);border-radius:50%;background:var(--sun);padding:2px;display:block}
+.yo-cambio{position:absolute;right:-4px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:var(--paper);border:2px solid var(--ink);font-size:12px;line-height:18px;text-align:center}
+.link{border:0;background:none;padding:6px 2px;font:inherit;font-size:13px;color:var(--ink2);text-decoration:underline}
 .yo p{margin:0;font-size:16px;text-align:left;line-height:1.3}
 
 /* ---------- el rollo (juego) ---------- */
@@ -232,7 +235,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.4.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -617,7 +620,7 @@ function elegirUsuario(){ state.user = ''; guardar(LS.user, ''); goScreen('quien
 function renderInicio(){
   const u = yo();
   let h = `<div class="logo"><small>ESCOGE TU PROPIA</small><b>AVENTUR<span>App</span></b></div>
-    <div class="yo"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><p><b>¡Hola, ${esc(u.nombre || 'exploradora')}!</b><br>Cada decisión cambia la historia.</p></div>`;
+    <div class="yo"><button id="btnYo" class="yo-av" aria-label="Cambiar de jugador"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></button><p><b>¡Hola, ${esc(u.nombre || 'exploradora')}!</b><br>Cada decisión cambia la historia.</p></div>`;
   if(!state.aventuras.length) h += `<div class="vacio card">Todavía no hay aventuras. Añade una en el Sheet.</div>`;
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id);
@@ -645,23 +648,14 @@ const icoAtras = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 
 const icoTijera = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 8.5 L20 18 M8.5 15.5 L20 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 
 function pie(){
-  return `<div class="pie"><div class="fila">
-      <button class="btn chico" id="btnQuien">Cambiar de jugador</button>
-      <button class="btn chico" id="btnActualizar">♻️ Actualizar app</button>
-      <button class="btn chico" id="btnBorrar">Borrar progreso</button></div>
-    <span>AVENTURApp v${APP_VERSION}${BACKEND_URL ? '' : ' · modo local'}</span></div>`;
+  return `<div class="pie"><span>AVENTURApp v${APP_VERSION}${BACKEND_URL ? '' : ' · modo local'} · <button class="link" id="btnActualizar">Actualizar</button></span></div>`;
 }
 
 $('#s-inicio').addEventListener('click', e => {
   const j = e.target.closest('[data-jugar]'); if(j) return abrirJuego(j.dataset.jugar);
   const m = e.target.closest('[data-mapa]'); if(m) return abrirMapa(m.dataset.mapa, 'inicio');
   if(e.target.closest('#btnActualizar')) return forzarActualizacion();
-  if(e.target.closest('#btnQuien')) return elegirUsuario();
-  const b = e.target.closest('#btnBorrar');
-  if(b){
-    if(!b.dataset.seguro){ b.dataset.seguro = '1'; b.textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { if(b.isConnected){ delete b.dataset.seguro; b.textContent = 'Borrar progreso'; } }, 3500); return; }
-    borrarProgreso();
-  }
+  if(e.target.closest('#btnYo')) return elegirUsuario();
 });
 
 /* ============================================================
