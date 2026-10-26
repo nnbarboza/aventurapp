@@ -8,7 +8,7 @@ Todo lo que pasa es históricamente correcto.
 - **Backend**: Google Apps Script (`Code.gs`) sobre un Google Sheet.
 - **Hosting**: GitHub Pages. PWA instalable. Coste: 0 €.
 
-## Qué tiene (v0.3.0)
+## Qué tiene (v0.6.0)
 
 | Sección | Qué hace |
 |---|---|
@@ -22,6 +22,14 @@ Todo lo que pasa es históricamente correcto.
 **Chewie** (el hámster) es el guía: cuenta el «¿Sabías que…?» de cada escena, consuela en los finales desastre y celebra el feliz. Viaja con ella por todas las épocas.
 
 Funciona **sin backend** (modo local, con la aventura del Paleolítico incluida) — sirve para probarla ya.
+
+### Novedades v0.6
+- **Invitados:** botón «+ Invitado/a» en Aventureros (nombre + carita). Se guardan en ese móvil y juegan «acompañando a Gina» (ven sus imágenes). Los compis fijos se añaden en la pestaña Usuarios.
+- **Línea del tiempo** en Inicio: las aventuras ordenadas por la columna `hace` (años). `activa = pronto` las muestra como «Próximamente».
+- **Datos:** filtro por aventura + 6 estadísticas.
+- **Medallas** (en Finales): se calculan solas a partir de las partidas y los quiz.
+- **Quiz de Chewie:** pestaña `Quiz` (`aventura_id · escena · pregunta · correcta · incorrecta_1 · incorrecta_2`). Solo pregunta por escenas ya visitadas (mínimo 3). Resultados en `Quizzes`.
+- **Neolítico (La Draga):** 33 escenas, 14 finales desastre, 2 finales felices.
 
 ## Puesta en marcha
 
