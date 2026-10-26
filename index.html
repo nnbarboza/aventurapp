@@ -183,9 +183,10 @@ h1,h2,h3{font-family:var(--fd);margin:0;line-height:1.1}
 .pie .fila{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:var(--maxw);height:calc(var(--navh) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--paper);border-top:2px solid var(--ink);display:flex;z-index:20}
 nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:var(--fd);font-weight:600;font-size:13px;color:var(--ink2)}
-nav button svg{width:26px;height:26px}
+nav button img{width:34px;height:34px;object-fit:contain;filter:grayscale(.85);opacity:.55;transition:transform .15s,filter .15s,opacity .15s}
 nav button.on{color:var(--ink)}
-nav button.on svg .rel{fill:var(--sun)}
+nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
+.logo-img{display:block;width:min(290px,80%);height:auto;margin:4px auto 10px}
 nav.oculta{display:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
@@ -215,7 +216,7 @@ nav.oculta{display:none}
 </defs></svg>
 
 <main>
-  <section class="screen sin-nav" id="s-quien"></section>
+  <section class="screen" id="s-quien"></section>
   <section class="screen" id="s-inicio"></section>
   <section class="screen sin-nav" id="s-juego"></section>
   <section class="screen" id="s-finales"></section>
@@ -224,9 +225,10 @@ nav.oculta{display:none}
 </main>
 
 <nav id="nav" aria-label="Secciones">
-  <button data-s="inicio" class="on"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path class="rel" d="M13 6 L16 13 L13 20 L10 13 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="13" cy="13" r="1.4" fill="currentColor"/></svg>Aventuras</button>
-  <button data-s="finales"><svg viewBox="0 0 26 26" aria-hidden="true"><path class="rel" d="M13 3 L15.6 9.2 L22.3 9.7 L17.2 14 L18.8 20.6 L13 17 L7.2 20.6 L8.8 14 L3.7 9.7 L10.4 9.2 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Finales</button>
-  <button data-s="datos"><svg viewBox="0 0 26 26" aria-hidden="true"><path class="rel" d="M4 5 C7 4 10 4.5 13 6.5 C16 4.5 19 4 22 5 L22 20 C19 19 16 19.5 13 21.5 C10 19.5 7 19 4 20 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 6.5 V21.5" stroke="currentColor" stroke-width="2"/></svg>Datos</button>
+  <button data-s="inicio" class="on"><img src="img/marca/nav_aventuras.webp" alt="">Aventuras</button>
+  <button data-s="finales"><img src="img/marca/nav_finales.webp" alt="">Finales</button>
+  <button data-s="datos"><img src="img/marca/nav_datos.webp" alt="">Datos</button>
+  <button data-s="quien"><img src="img/marca/nav_aventureros.webp" alt="">Aventureros</button>
 </nav>
 <div class="toast" id="toast" role="status"></div>
 
@@ -235,7 +237,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.5.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -583,7 +585,7 @@ function goScreen(s){
   state.screen = s;
   $$('.screen').forEach(el => el.classList.toggle('active', el.id === 's-' + s));
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
-  $('#nav').classList.toggle('oculta', s === 'juego' || s === 'mapa' || s === 'quien');
+  $('#nav').classList.toggle('oculta', s === 'juego' || s === 'mapa' || (s === 'quien' && !state.user));
   if(s === 'quien') renderQuien();
   if(s === 'inicio') renderInicio();
   if(s === 'finales') renderFinales();
@@ -598,8 +600,8 @@ $('#nav').addEventListener('click', e => { const b = e.target.closest('button[da
    ============================================================ */
 const avatarSrc = (u) => u.avatar ? 'img/' + String(u.avatar).trim() : `img/kit/paleolitico/${u.username}/contenta.webp`;
 function renderQuien(){
-  let h = `<div class="logo" style="margin-top:20px"><small>ESCOGE TU PROPIA</small><b>AVENTUR<span>App</span></b></div>
-    <h2 style="text-align:center;font-size:26px;margin:18px 0 6px">¿Quién eres?</h2>
+  let h = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
+    <h2 style="text-align:center;font-size:26px;margin:14px 0 6px">¿Quién eres?</h2>
     <p class="muted" style="text-align:center;margin:0 0 10px">Toca tu dibujo para empezar.</p><div class="quien">`;
   state.usuarios.forEach(u => {
     h += `<button class="card u" data-user="${esc(u.username)}" style="background:${esc(u.color || '#FFFDF8')}">
@@ -612,14 +614,14 @@ $('#s-quien').addEventListener('click', e => {
   state.user = b.dataset.user; guardar(LS.user, state.user);
   goScreen('inicio');
 });
-function elegirUsuario(){ state.user = ''; guardar(LS.user, ''); goScreen('quien'); }
+function elegirUsuario(){ goScreen('quien'); }
 
 /* ============================================================
    INICIO
    ============================================================ */
 function renderInicio(){
   const u = yo();
-  let h = `<div class="logo"><small>ESCOGE TU PROPIA</small><b>AVENTUR<span>App</span></b></div>
+  let h = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
     <div class="yo"><button id="btnYo" class="yo-av" aria-label="Cambiar de jugador"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></button><p><b>¡Hola, ${esc(u.nombre || 'exploradora')}!</b><br>Cada decisión cambia la historia.</p></div>`;
   if(!state.aventuras.length) h += `<div class="vacio card">Todavía no hay aventuras. Añade una en el Sheet.</div>`;
   state.aventuras.forEach(a => {
