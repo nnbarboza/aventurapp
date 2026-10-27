@@ -191,6 +191,25 @@ nav.oculta{display:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
 .vacio{text-align:center;padding:30px 10px;color:var(--ink2)}
+/* desplegables por aventura */
+.plegable{margin-bottom:14px}
+.plegable>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:56px}
+.plegable>summary::-webkit-details-marker{display:none}
+.plegable>summary .pl-t{flex:1;min-width:0}
+.plegable>summary .pl-t strong{display:block;font-family:var(--fd);font-weight:600;font-size:18px}
+.plegable>summary .pl-t span{font-size:13px;color:var(--ink2)}
+.plegable>summary .pl-n{font-family:var(--fd);font-weight:700;font-size:22px}
+.plegable>summary .pl-n small{font-size:14px;color:var(--ink2)}
+.plegable>summary .chev{transition:transform .2s;font-size:18px}
+.plegable[open]>summary .chev{transform:rotate(180deg)}
+.plegable .pl-body{padding:4px 12px 14px}
+.qz-res{display:flex;flex-direction:column;align-items:center;gap:4px;margin:6px 0 16px}
+/* instalar (landing del QR) */
+.inst{padding:16px;margin-bottom:14px}
+.inst h2{font-size:20px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.inst ol{margin:0;padding-left:22px;font-size:16px;line-height:1.5}
+.inst.yo-dispositivo{border-color:var(--ocre);border-width:3px}
+.kbd{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;border:2px solid var(--ink);border-radius:6px;background:#fff;font-weight:800;font-size:14px;padding:0 4px;vertical-align:middle}
 /* línea del tiempo */
 .tl{position:relative;padding-left:26px}
 .tl::before{content:"";position:absolute;left:9px;top:8px;bottom:8px;border-left:3px dashed var(--soft2)}
@@ -202,6 +221,8 @@ nav.oculta{display:none}
 .av-pronto .emo{font-size:34px;filter:grayscale(1);opacity:.6}
 .av-pronto h2{font-size:19px;color:var(--ink2)}
 .av-acc .btn.quiz{flex:0 0 auto;padding:0 12px;font-size:15px}
+.av-acc .btn.quiz.hecho{background:var(--mint)}
+.pronto-t{font-family:var(--fd);font-weight:600;font-size:16px;color:var(--ink2);margin:6px 0 10px}
 /* datos: filtros + stats */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px 6px}
 .chip{flex-shrink:0;border:2px solid var(--ink);border-radius:999px;background:var(--paper);padding:6px 14px;font-family:var(--fd);font-weight:600;font-size:15px;min-height:40px}
@@ -266,6 +287,7 @@ nav.oculta{display:none}
 </defs></svg>
 
 <main>
+  <section class="screen sin-nav" id="s-instalar"></section>
   <section class="screen" id="s-quien"></section>
   <section class="screen" id="s-inicio"></section>
   <section class="screen sin-nav" id="s-juego"></section>
@@ -277,7 +299,7 @@ nav.oculta{display:none}
 
 <nav id="nav" aria-label="Secciones">
   <button data-s="inicio" class="on"><img src="img/marca/nav_aventuras.webp" alt="">Aventuras</button>
-  <button data-s="finales"><img src="img/marca/nav_finales.webp" alt="">Finales</button>
+  <button data-s="finales"><img src="img/marca/nav_finales.webp" alt="">Logros</button>
   <button data-s="datos"><img src="img/marca/nav_datos.webp" alt="">Datos</button>
   <button data-s="quien"><img src="img/marca/nav_aventureros.webp" alt="">Aventureros</button>
 </nav>
@@ -288,7 +310,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.6.0';
+const APP_VERSION = '0.7.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -642,7 +664,8 @@ function goScreen(s){
   state.screen = s;
   $$('.screen').forEach(el => el.classList.toggle('active', el.id === 's-' + s));
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
-  $('#nav').classList.toggle('oculta', s === 'juego' || s === 'mapa' || s === 'quiz' || (s === 'quien' && !state.user));
+  $('#nav').classList.toggle('oculta', s === 'juego' || s === 'mapa' || s === 'quiz' || s === 'instalar' || (s === 'quien' && !state.user));
+  if(s === 'instalar') renderInstalar();
   if(s === 'quien') renderQuien();
   if(s === 'inicio') renderInicio();
   if(s === 'finales') renderFinales();
@@ -722,13 +745,12 @@ function renderInicio(){
   let h = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
     <div class="yo"><button id="btnYo" class="yo-av" aria-label="Cambiar de jugador"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></button><p><b>¡Hola, ${esc(u.nombre || 'exploradora')}!</b><br>${u.invitado ? 'Hoy acompañas a Gina en sus aventuras.' : 'Cada decisión cambia la historia.'}</p></div>`;
   if(!state.aventuras.length) h += `<div class="vacio card">Todavía no hay aventuras. Añade una en el Sheet.</div>`;
-  h += `<h2 class="sec-t" style="margin-top:6px">Tu viaje en el tiempo</h2><div class="tl">`;
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id);
     const n = fins.filter(f => desc[f.num]).length;
     const j = J()[a.id], enCurso = j && j.camino.length > 1 && !esFinal(escenasDe(a.id)[j.camino[j.camino.length - 1]]);
-    const qz = preguntasDisponibles(a.id).length >= 3;
-    h += `<div class="tl-st"><p class="tl-hace">${esc(haceTxt(a))}</p><article class="card av" style="--av:${esc(a.color || '#9CCBE8')}">
+    const qz = preguntasDisponibles(a.id).length >= 3, mejor = mejorQuiz(a.id);
+    h += `<article class="card av" style="--av:${esc(a.color || '#9CCBE8')}">
       <div class="av-ilus">${ilusAventura(a)}</div>
       <div class="av-b">
         <div class="av-epoca">${esc(a.epoca || '')}</div>
@@ -738,16 +760,17 @@ function renderInicio(){
           <span>${n} de ${fins.length} finales</span></div>
         <div class="av-acc">
           <button class="btn prim" data-jugar="${esc(a.id)}">${enCurso ? 'Seguir' : (partidasDe(a.id).length ? 'Jugar otra vez' : '¡Jugar!')}</button>
-          ${qz ? `<button class="btn sun quiz" data-quiz="${esc(a.id)}" aria-label="Quiz de Chewie"><img src="${chewieSrc('normal')}" alt="" class="kit-img" style="width:28px;height:28px;object-fit:contain">Quiz</button>` : ''}
+          ${qz ? `<button class="btn sun quiz ${mejor ? 'hecho' : ''}" data-quiz="${esc(a.id)}" aria-label="Quiz de Chewie"><img src="${chewieSrc('normal')}" alt="" class="kit-img" style="width:28px;height:28px;object-fit:contain">${mejor ? mejor.aciertos + '/' + mejor.total : 'Quiz'}</button>` : ''}
           <button class="btn" data-mapa="${esc(a.id)}" aria-label="Ver el mapa">${icoMapa}</button>
         </div>
-      </div></article></div>`;
+      </div></article>`;
   });
+  if(state.pronto.length) h += `<p class="pronto-t">Próximamente</p>`;
   state.pronto.forEach(a => {
-    h += `<div class="tl-st pronto"><p class="tl-hace">${esc(haceTxt(a))}</p><div class="card av-pronto"><span class="emo">${esc(a.emoji || '🔒')}</span>
-      <div><h2>${esc(a.titulo)}</h2><span style="font-size:14px">Próximamente</span></div></div></div>`;
+    h += `<div class="card av-pronto" style="margin-bottom:12px"><span class="emo">${esc(a.emoji || '🔒')}</span>
+      <div><h2>${esc(a.titulo)}</h2><span style="font-size:14px">${esc(a.epoca || 'Próximamente')}</span></div></div>`;
   });
-  h += `</div>` + pie();
+  h += pie();
   $('#s-inicio').innerHTML = h;
 }
 const icoMapa = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6 L9 4 L15 6 L21 4 L21 18 L15 20 L9 18 L3 20 Z M9 4 V18 M15 6 V20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
@@ -881,10 +904,11 @@ function renderFinales(){
   const meds = medallas(), n = meds.filter(m => m.ok).length;
   let h = `<h1 style="font-size:28px;margin:6px 0 4px">Medallas</h1><p class="muted" style="margin:0 0 12px">Llevas ${n} de ${meds.length}.</p>
     <div class="meds">${meds.map(m => `<div class="card med ${m.ok ? '' : 'no'}"><span class="m" aria-hidden="true">${m.emoji}</span><b>${esc(m.titulo)}</b><span>${esc(m.desc)}</span></div>`).join('')}</div>
-    <h1 style="font-size:28px;margin:22px 0 4px">Álbum de finales</h1><p class="muted" style="margin:0 0 16px">¿Los encontrarás todos? Algunos son desastres muy graciosos.</p>`;
+    <h1 style="font-size:28px;margin:26px 0 4px">Finales</h1><p class="muted" style="margin:0 0 14px">¿Los encontrarás todos? Toca una aventura para ver los suyos.</p>`;
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id), n = fins.filter(f => desc[f.num]).length;
-    h += `<div class="card contador"><b>${n}<small>/${fins.length}</small></b><p><strong>${esc(a.titulo)}</strong><br>${n === fins.length ? '¡Los tienes todos! Eres una experta.' : 'Te faltan ' + (fins.length - n) + '. Prueba caminos distintos.'}</p></div><div class="grid2">`;
+    h += `<details class="card plegable"><summary><span class="pl-t"><strong>${esc(a.titulo)}</strong><span>${n === fins.length ? '¡Los tienes todos!' : 'Te faltan ' + (fins.length - n)}</span></span>
+      <span class="pl-n">${n}<small>/${fins.length}</small></span><span class="chev" aria-hidden="true">▾</span></summary><div class="pl-body"><div class="grid2">`;
     fins.forEach(f => {
       const veces = desc[f.num];
       if(!veces) h += `<div class="card fz-card oculto"><div class="q">?</div><div style="font-family:var(--fd);font-weight:600">${f.tipo === 'final' ? 'Final feliz secreto' : 'Final secreto'}</div></div>`;
@@ -892,7 +916,7 @@ function renderFinales(){
         <h3>${esc(f.titulo)}</h3><span class="tag">${f.tipo === 'final' ? 'FINAL FELIZ' : 'FIN'}</span>
         <span class="veces">${veces === 1 ? 'Lo encontraste 1 vez' : 'Lo encontraste ' + veces + ' veces'}</span></div>`;
     });
-    h += `</div>`;
+    h += `</div></div></details>`;
   });
   $('#s-finales').innerHTML = h;
 }
@@ -932,11 +956,13 @@ function renderDatos(){
     const vis = visitadas(a.id);
     const conDato = Object.values(escenasDe(a.id)).filter(e => e.dato).sort((x, y) => x.num - y.num);
     const n = conDato.filter(e => vis.has(e.num)).length;
-    h += `<h2 class="sec-t">${esc(a.titulo)} <span class="muted" style="font-size:15px">· ${n}/${conDato.length}</span></h2>`;
+    h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>${esc(a.titulo)}</strong><span>Datos descubiertos</span></span>
+      <span class="pl-n">${n}<small>/${conDato.length}</small></span><span class="chev" aria-hidden="true">▾</span></summary><div class="pl-body">`;
     conDato.forEach(e => {
       if(vis.has(e.num)) h += `<div class="card dt"><span class="num">${e.num}</span><div><h3>${esc(e.titulo)}</h3><p>${esc(e.dato)}</p></div></div>`;
       else h += `<div class="card dt oculto"><span class="num">?</span><div><h3>Dato escondido</h3><p>Sigue explorando para descubrirlo.</p></div></div>`;
     });
+    h += `</div></details>`;
   });
   $('#s-datos').innerHTML = h;
 }
@@ -982,14 +1008,36 @@ function preguntasDisponibles(aid){
   return state.quiz.filter(q => String(q.aventura_id) === aid && (!Number(q.escena) || vis.has(Number(q.escena))));
 }
 function barajar(a){ a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function mejorQuiz(aid){
+  const qs = quizzesMios().filter(q => q.aventura_id === aid);
+  if(!qs.length) return null;
+  const m = qs.slice().sort((x, y) => (y.aciertos / y.total) - (x.aciertos / x.total))[0];
+  return { aciertos:Number(m.aciertos), total:Number(m.total), veces:qs.length, ultimo:qs[qs.length - 1] };
+}
+/* Si ya lo hizo, primero el resumen; desde ahí puede repetir para mejorar. */
 function abrirQuiz(aid, volver){
+  if(mejorQuiz(aid)){ state.qz = { aid:aid, volver:volver || 'inicio', resumen:true, ps:[], res:[] }; goScreen('quiz'); renderQuiz(); return; }
+  empezarQuiz(aid, volver);
+}
+function empezarQuiz(aid, volver){
   const ps = barajar(preguntasDisponibles(aid)).slice(0, 5).map(q => ({ q:q, ops:barajar([q.correcta, q.incorrecta_1, q.incorrecta_2].filter(Boolean)) }));
   if(ps.length < 3){ toast('Explora más escenas para desbloquear el quiz'); return; }
+  state.qz = null;
   state.qz = { aid:aid, volver:volver || 'inicio', ps:ps, i:0, res:[], resp:null };
   goScreen('quiz'); renderQuiz();
 }
 function renderQuiz(){
   const z = state.qz, a = aventura(z.aid);
+  if(z.resumen){
+    const m = mejorQuiz(z.aid), perfecto = m.aciertos === m.total;
+    $('#s-quiz').innerHTML = `<div class="topbar"><button class="ico-btn" data-acc="salir" aria-label="Volver">${icoAtras}</button><h1>Quiz · ${esc(a ? a.titulo : '')}</h1><span style="width:44px"></span></div>
+      <div class="card qz-fin"><img src="${chewieSrc(perfecto ? 'comiendo' : 'normal')}" alt="" class="kit-img" style="width:110px;height:110px;object-fit:contain">
+      <div class="qz-res"><span class="muted">Tu mejor nota</span><p style="margin:0"><b>${m.aciertos}</b><span style="font-family:var(--fd);font-size:24px;color:var(--ink2)">/${m.total}</span></p>
+      <span class="muted">${m.veces === 1 ? 'Lo has hecho 1 vez' : 'Lo has hecho ' + m.veces + ' veces'}</span></div>
+      <p style="font-size:17px;margin:0 0 16px">${perfecto ? '¡Nota perfecta! Chewie te aplaude.' : '¿Quieres intentar mejorarla? Las preguntas cambian cada vez.'}</p>
+      <div class="fin-acc"><button class="btn prim full" data-acc="otra">${perfecto ? 'Repetir el quiz' : 'Repetir para mejorar'}</button><button class="btn full" data-acc="salir">Volver</button></div></div>`;
+    return;
+  }
   let h = `<div class="topbar"><button class="ico-btn" data-acc="salir" aria-label="Salir del quiz">${icoAtras}</button><h1>Quiz · ${esc(a ? a.titulo : '')}</h1><span style="width:44px"></span></div>
     <div class="qz-prog">${z.ps.map((p, i) => `<i class="${z.res[i] === true ? 'ok' : z.res[i] === false ? 'mal' : i === z.i ? 'ya' : ''}"></i>`).join('')}</div>`;
   if(z.i >= z.ps.length){
@@ -997,7 +1045,7 @@ function renderQuiz(){
     h += `<div class="card qz-fin"><img src="${chewieSrc(perfecto ? 'comiendo' : ok >= tot / 2 ? 'normal' : 'dormido')}" alt="" class="kit-img" style="width:110px;height:110px;object-fit:contain">
       <p style="margin:6px 0"><b>${ok}</b><span style="font-family:var(--fd);font-size:24px;color:var(--ink2)">/${tot}</span></p>
       <p style="font-size:17px;margin:0 0 16px">${perfecto ? '¡Perfecto! Chewie está flipando contigo.' : ok >= tot / 2 ? '¡Muy bien! Chewie dice que casi lo tienes.' : 'Chewie se ha dormido… ¡pero seguro que la próxima vas mejor!'}</p>
-      <div class="fin-acc"><button class="btn prim full" data-acc="otra">Otro quiz</button><button class="btn full" data-acc="salir">Volver</button></div></div>`;
+      <div class="fin-acc"><button class="btn prim full" data-acc="otra">Repetir para mejorar</button><button class="btn full" data-acc="salir">Volver</button></div></div>`;
   } else {
     const p = z.ps[z.i];
     h += `<div class="chewie"><img src="${chewieSrc(z.resp === null ? 'oliendo' : z.resp ? 'comiendo' : 'sorprendido')}" alt="" class="kit-img"><div class="bur"><b>Pregunta ${z.i + 1} de ${z.ps.length}</b></div></div>
@@ -1029,7 +1077,7 @@ $('#s-quiz').addEventListener('click', e => {
     if(z.i >= z.ps.length) guardarQuiz(z.aid, z.res.filter(Boolean).length, z.ps.length);
     renderQuiz(); window.scrollTo(0, 0);
   }
-  if(a.dataset.acc === 'otra') abrirQuiz(z.aid, z.volver);
+  if(a.dataset.acc === 'otra') empezarQuiz(z.aid, z.volver);
   if(a.dataset.acc === 'salir'){
     if(z.volver === 'juego'){ goScreen('juego'); renderJuego(); } else goScreen(z.volver);
   }
@@ -1147,12 +1195,43 @@ function forzarActualizacion(){
     .then(() => { try { localStorage.removeItem(LS.datos); } catch(e){} })
     .catch(() => {}).then(fin);
 }
+/* ============================================================
+   INSTALAR — landing del QR de la tira impresa (?qr=1)
+   ============================================================ */
+const esApp = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let promptInstalar = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); promptInstalar = e; if(state.screen === 'instalar') renderInstalar(); });
+function renderInstalar(){
+  const ios = esIOS(), android = /android/i.test(navigator.userAgent);
+  $('#s-instalar').innerHTML = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
+    <h2 style="text-align:center;font-size:24px;margin:10px 0 6px">¡Bienvenida, aventurera!</h2>
+    <p class="muted" style="text-align:center;margin:0 0 16px">Instala la app en tu móvil para jugar como en un juego de verdad (y que se guarde tu progreso).</p>
+    ${promptInstalar ? `<button class="btn prim full" data-acc="instalar" style="margin-bottom:14px">📲 Instalar AventurApp</button>` : ''}
+    <div class="card inst ${ios ? 'yo-dispositivo' : ''}"><h2>🍎 iPhone / iPad</h2><ol>
+      <li>Abre esta página en <b>Safari</b>.</li>
+      <li>Toca el botón <b>Compartir</b> <span class="kbd">⬆︎</span> (abajo).</li>
+      <li>Elige <b>«Añadir a pantalla de inicio»</b> y toca <b>Añadir</b>.</li></ol></div>
+    <div class="card inst ${android ? 'yo-dispositivo' : ''}"><h2>🤖 Android</h2><ol>
+      <li>Abre esta página en <b>Chrome</b>.</li>
+      <li>Toca el menú <span class="kbd">⋮</span> (arriba a la derecha).</li>
+      <li>Elige <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.</li></ol></div>
+    <div class="card inst"><h2>🎒 Y después…</h2><ol><li>Abre <b>AventurApp</b> desde el icono nuevo de tu móvil.</li><li>Elige quién eres (o crea tu invitado).</li><li>¡A jugar!</li></ol></div>
+    <button class="btn full" data-acc="seguir" style="margin-top:6px">Jugar ahora desde el navegador</button>`;
+}
+$('#s-instalar').addEventListener('click', e => {
+  const a = e.target.closest('[data-acc]'); if(!a) return;
+  if(a.dataset.acc === 'instalar' && promptInstalar){ promptInstalar.prompt(); promptInstalar.userChoice.finally(() => { promptInstalar = null; renderInstalar(); }); }
+  if(a.dataset.acc === 'seguir'){ history.replaceState(null, '', location.pathname); arrancarPantalla(true); }
+});
+
 function marcarMedallasVistas(){
   const vistas = leer(LS.medallas, {});
   if(state.user && !vistas[state.user]){ vistas[state.user] = medallas().filter(m => m.ok).map(m => m.id); guardar(LS.medallas, vistas); }
 }
-function arrancarPantalla(){
+function arrancarPantalla(saltarInstalar){
   marcarMedallasVistas();
+  if(!saltarInstalar && /[?&]qr\b/.test(location.search) && !esApp()) return goScreen('instalar');
   if(!state.user || !todosUsuarios().some(u => u.username === state.user)) goScreen('quien');
   else goScreen('inicio');
 }
@@ -1182,6 +1261,7 @@ async function bootstrap(){
     }
     if(!state.usuarios.length) state.usuarios = SEED.usuarios.slice();
     if(state.screen === 'quien') renderQuien();
+    else if(state.screen === 'instalar') {}
     else if(state.screen !== 'juego' && state.screen !== 'mapa') repintar();
     flush();
   } catch(e){ /* sin red: seguimos con lo guardado */ }
