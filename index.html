@@ -233,13 +233,15 @@ nav.oculta{display:none}
 .st b small{font-size:15px;color:var(--ink2)}
 .st span{font-size:12px;color:var(--ink2);line-height:1.2}
 .st i{font-style:normal;font-size:18px}
+.st img{height:40px;width:100%;object-fit:contain;margin-bottom:2px}
 /* medallas */
 .meds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:8px}
 .med{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:10px 4px;font-size:12px;line-height:1.2}
-.med .m{width:52px;height:52px;border-radius:50%;border:2px solid var(--ink);background:var(--sun);display:flex;align-items:center;justify-content:center;font-size:26px}
+.med .m{width:64px;height:64px;display:flex;align-items:center;justify-content:center}
+.med .m img{width:100%;height:100%;object-fit:contain}
 .med b{font-family:var(--fd);font-weight:600;font-size:13px}
 .med.no{box-shadow:none;border-style:dashed;background:transparent;color:var(--ink2)}
-.med.no .m{background:var(--soft);border-style:dashed;border-color:var(--ink2);filter:grayscale(1);opacity:.55}
+.med.no .m{filter:grayscale(1);opacity:.35}
 /* quiz */
 .qz-prog{display:flex;gap:6px;justify-content:center;margin:4px 0 14px}
 .qz-prog i{width:28px;height:8px;border-radius:4px;background:var(--soft2)}
@@ -252,13 +254,14 @@ nav.oculta{display:none}
 /* invitados */
 .u.nuevo{border-style:dashed;box-shadow:none;background:transparent;color:var(--ink2);justify-content:center;min-height:180px}
 .u.nuevo .mas{font-size:44px;line-height:1}
+.u.nuevo img{width:100%;height:110px;object-fit:contain}
 .u-wrap{position:relative}
 .u-quitar{position:absolute;top:-8px;right:-8px;width:30px;height:30px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);font-weight:800;line-height:1}
 .inv-form{padding:16px;margin-top:16px;display:flex;flex-direction:column;gap:12px}
 .inv-form label{font-family:var(--fd);font-weight:600}
 .inv-form input{font:inherit;font-size:18px;padding:10px 12px;border:2px solid var(--ink);border-radius:12px;background:#fff;width:100%}
-.caras{display:flex;gap:10px;justify-content:space-between}
-.cara{border:3px solid transparent;border-radius:50%;padding:2px;background:none;width:64px;height:64px}
+.caras{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.cara{border:3px solid transparent;border-radius:50%;padding:1px;background:none;width:100%;aspect-ratio:1}
 .cara img{width:100%;height:100%;border-radius:50%;display:block}
 .cara.on{border-color:var(--ocre)}
 .inv-acc{display:flex;gap:10px}.inv-acc .btn{flex:1}
@@ -310,7 +313,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.7.0';
+const APP_VERSION = '0.8.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -678,8 +681,9 @@ $('#nav').addEventListener('click', e => { const b = e.target.closest('button[da
 /* ============================================================
    ¿QUIÉN ERES?
    ============================================================ */
-const CARAS = ['cara_1', 'cara_2', 'cara_3', 'cara_4'];
-const avatarSrc = (u) => u.invitado ? `img/marca/${u.cara || 'cara_1'}.webp`
+const CARAS = ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6'];
+const caraSrc = (c) => /^cara_/.test(c || '') ? `img/marca/${c}.webp` : `img/marca/avatares/${c || 'n1'}.webp`;
+const avatarSrc = (u) => u.invitado ? caraSrc(u.cara)
   : u.avatar ? 'img/' + String(u.avatar).trim() : `img/kit/paleolitico/${u.username}/contenta.webp`;
 function renderQuien(){
   let h = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
@@ -694,13 +698,13 @@ function renderQuien(){
       <img src="${esc(avatarSrc(u))}" alt="" style="height:96px;border-radius:50%">${esc(u.nombre)}</button>
       <button class="u-quitar" data-quitar="${esc(u.username)}" aria-label="Quitar a ${esc(u.nombre)}">×</button></div>`;
   });
-  if(!state.invForm) h += `<button class="card u nuevo" data-acc="nuevo"><span class="mas">+</span>Invitado/a</button>`;
+  if(!state.invForm) h += `<button class="card u nuevo" data-acc="nuevo"><img src="img/marca/avatares/invitado.webp" alt="" class="kit-img">+ Invitado/a</button>`;
   h += `</div>`;
   if(state.invForm){
     const f = state.invForm;
     h += `<div class="card inv-form"><label for="invNombre">¿Cómo te llamas?</label>
       <input id="invNombre" maxlength="16" autocomplete="off" value="${esc(f.nombre)}" placeholder="Tu nombre">
-      <label>Elige tu cara</label><div class="caras">${CARAS.map(c => `<button class="cara ${f.cara === c ? 'on' : ''}" data-cara="${c}" aria-label="Cara ${c.slice(-1)}"><img src="img/marca/${c}.webp" alt=""></button>`).join('')}</div>
+      <label>Elige tu cara</label><div class="caras">${CARAS.map(c => `<button class="cara ${f.cara === c ? 'on' : ''}" data-cara="${c}" aria-label="Cara ${c}"><img src="${caraSrc(c)}" alt=""></button>`).join('')}</div>
       <p class="muted" style="margin:0;font-size:14px">Jugarás acompañando a Gina en sus aventuras. Tu progreso se guarda en este móvil.</p>
       <div class="inv-acc"><button class="btn" data-acc="cancelar">Cancelar</button><button class="btn prim" data-acc="crear">¡Listo!</button></div></div>`;
   }
@@ -719,21 +723,28 @@ $('#s-quien').addEventListener('click', e => {
   const c = e.target.closest('[data-cara]'); if(c){ state.invForm.cara = c.dataset.cara; return renderQuien(); }
   const a = e.target.closest('[data-acc]');
   if(a){
-    if(a.dataset.acc === 'nuevo'){ state.invForm = { nombre:'', cara:'cara_1' }; return renderQuien(); }
+    if(a.dataset.acc === 'nuevo'){ state.invForm = { nombre:'', cara:'n1' }; return renderQuien(); }
     if(a.dataset.acc === 'cancelar'){ state.invForm = null; return renderQuien(); }
     if(a.dataset.acc === 'crear'){
       const nombre = String(state.invForm.nombre || '').trim();
       if(!nombre){ toast('Escribe tu nombre'); return; }
       const u = { username:'inv_' + uid().slice(2), nombre:nombre, cara:state.invForm.cara, invitado:true };
-      state.invitados.push(u); guardar(LS.invitados, state.invitados); state.invForm = null;
+      state.invitados.push(u); guardar(LS.invitados, state.invitados); state.invForm = null; registrarInvitado(u);
       state.user = u.username; guardar(LS.user, u.username); return goScreen('inicio');
     }
     return;
   }
   const b = e.target.closest('[data-user]'); if(!b) return;
   state.user = b.dataset.user; guardar(LS.user, state.user); state.invForm = null;
+  const inv = state.invitados.find(u => u.username === state.user); if(inv) registrarInvitado(inv);
   goScreen('inicio');
 });
+/* Los invitados viven en el móvil, pero se apuntan en el Sheet (pestaña Invitados) para saber quién ha jugado. */
+function registrarInvitado(u){
+  const cola = leer(LS.cola, []);
+  cola.push({ action:'saveInvitado', payload:{ username:u.username, nombre:u.nombre, avatar:u.cara, ts:new Date().toISOString() } });
+  guardar(LS.cola, cola); flush();
+}
 function elegirUsuario(){ goScreen('quien'); }
 
 /* ============================================================
@@ -827,7 +838,7 @@ function panel(aid, e, elegida, activa, nuevo){
     <p class="txt">${esc(e.texto)}</p>`;
   if(!fin){
     if(e.dato) h += `<details class="sabias"><summary><img src="${chewieSrc('oliendo')}" alt="" class="kit-img">Chewie sabe algo…</summary>
-      <div class="chewie" style="margin-top:6px"><img src="${chewieSrc('explorando')}" alt="" class="kit-img"><div class="bur"><b>¿Sabías que…?</b> ${esc(e.dato)}</div></div></details>`;
+      <div class="chewie" style="margin-top:6px"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>¿Sabías que…?</b> ${esc(e.dato)}</div></div></details>`;
     h += `<div class="ops">` + ['a', 'b'].filter(k => e['opcion_' + k]).map(k => {
       const cls = elegida ? (elegida === k ? 'elegida' : 'descartada') : '';
       return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
@@ -903,7 +914,7 @@ function confeti(){
 function renderFinales(){
   const meds = medallas(), n = meds.filter(m => m.ok).length;
   let h = `<h1 style="font-size:28px;margin:6px 0 4px">Medallas</h1><p class="muted" style="margin:0 0 12px">Llevas ${n} de ${meds.length}.</p>
-    <div class="meds">${meds.map(m => `<div class="card med ${m.ok ? '' : 'no'}"><span class="m" aria-hidden="true">${m.emoji}</span><b>${esc(m.titulo)}</b><span>${esc(m.desc)}</span></div>`).join('')}</div>
+    <div class="meds">${meds.map(m => `<div class="card med ${m.ok ? '' : 'no'}"><span class="m" aria-hidden="true"><img src="img/marca/medallas/${m.img}.webp" alt=""></span><b>${esc(m.titulo)}</b><span>${esc(m.desc)}</span></div>`).join('')}</div>
     <h1 style="font-size:28px;margin:26px 0 4px">Finales</h1><p class="muted" style="margin:0 0 14px">¿Los encontrarás todos? Toca una aventura para ver los suyos.</p>`;
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id), n = fins.filter(f => desc[f.num]).length;
@@ -945,12 +956,12 @@ function renderDatos(){
   let h = `<h1 style="font-size:28px;margin:6px 0 4px">Cuaderno de datos</h1><p class="muted" style="margin:0 0 12px">Cada escena que visitas te regala un dato real de la historia.</p>
     <div class="chips" role="tablist"><button class="chip ${f === 'todas' ? 'on' : ''}" data-f="todas">Todas</button>${state.aventuras.map(a => `<button class="chip ${f === a.id ? 'on' : ''}" data-f="${esc(a.id)}">${esc(a.titulo)}</button>`).join('')}</div>
     <div class="stats">
-      ${f === 'todas' ? `<div class="card st"><i>🧭</i><b>${s.jugadas}<small>/${s.total}</small></b><span>aventuras jugadas</span></div>` : ''}
-      <div class="card st"><i>🎲</i><b>${s.partidas}</b><span>partidas</span></div>
-      <div class="card st"><i>⭐</i><b>${s.felices}<small>/${s.felicesT}</small></b><span>finales felices</span></div>
-      <div class="card st"><i>💥</i><b>${s.fatales}<small>/${s.fatalesT}</small></b><span>finales desastre</span></div>
-      <div class="card st"><i>💡</i><b>${s.datos}<small>/${s.datosT}</small></b><span>datos descubiertos</span></div>
-      <div class="card st"><i>🗺️</i><b>${pct}<small>%</small></b><span>mapa explorado</span></div>
+      ${f === 'todas' ? `<div class="card st"><img src="img/marca/stats/aventuras.webp" alt=""><b>${s.jugadas}<small>/${s.total}</small></b><span>aventuras jugadas</span></div>` : ''}
+      <div class="card st"><img src="img/marca/stats/partidas.webp" alt=""><b>${s.partidas}</b><span>partidas</span></div>
+      <div class="card st"><img src="img/marca/stats/felices.webp" alt=""><b>${s.felices}<small>/${s.felicesT}</small></b><span>finales felices</span></div>
+      <div class="card st"><img src="img/marca/stats/desastre.webp" alt=""><b>${s.fatales}<small>/${s.fatalesT}</small></b><span>finales desastre</span></div>
+      <div class="card st"><img src="img/marca/stats/datos.webp" alt=""><b>${s.datos}<small>/${s.datosT}</small></b><span>datos descubiertos</span></div>
+      <div class="card st"><img src="img/marca/stats/mapa.webp" alt=""><b>${pct}<small>%</small></b><span>mapa explorado</span></div>
     </div>`;
   avs.forEach(a => {
     const vis = visitadas(a.id);
@@ -977,17 +988,17 @@ function medallas(){
   const tipoDe = p => { const e = escenasDe(p.aventura_id)[Number(p.final)]; return e ? e.tipo : ''; };
   const avsJugadas = new Set(ps.map(p => p.aventura_id));
   const m = [
-    { id:'primera', emoji:'🎒', titulo:'Primera aventura', desc:'Termina una partida', ok: ps.length >= 1 },
-    { id:'desastre', emoji:'💥', titulo:'Primer desastre', desc:'Llega a un final desastre', ok: ps.some(p => tipoDe(p) === 'fin') },
-    { id:'feliz', emoji:'⭐', titulo:'Final feliz', desc:'Llega a un final feliz', ok: ps.some(p => tipoDe(p) === 'final') },
-    { id:'diez', emoji:'🔟', titulo:'Diez partidas', desc:'Juega 10 partidas', ok: ps.length >= 10 },
-    { id:'viaje', emoji:'⏳', titulo:'Viaje en el tiempo', desc:'Juega 2 aventuras distintas', ok: avsJugadas.size >= 2 },
-    { id:'quiz', emoji:'🧠', titulo:'Quiz perfecto', desc:'Acierta todo un quiz', ok: quizzesMios().some(q => Number(q.total) >= 3 && Number(q.aciertos) === Number(q.total)) }
+    { id:'primera', img:'estrella', titulo:'Primera aventura', desc:'Termina una partida', ok: ps.length >= 1 },
+    { id:'desastre', img:'fuego', titulo:'Primer desastre', desc:'Llega a un final desastre', ok: ps.some(p => tipoDe(p) === 'fin') },
+    { id:'feliz', img:'corazon', titulo:'Final feliz', desc:'Llega a un final feliz', ok: ps.some(p => tipoDe(p) === 'final') },
+    { id:'diez', img:'corona', titulo:'Diez partidas', desc:'Juega 10 partidas', ok: ps.length >= 10 },
+    { id:'viaje', img:'brujula', titulo:'Viaje en el tiempo', desc:'Juega 2 aventuras distintas', ok: avsJugadas.size >= 2 },
+    { id:'quiz', img:'bombilla', titulo:'Quiz perfecto', desc:'Acierta todo un quiz', ok: quizzesMios().some(q => Number(q.total) >= 3 && Number(q.aciertos) === Number(q.total)) }
   ];
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id), E = Object.keys(escenasDe(a.id)), vis = visitadas(a.id);
-    m.push({ id:'todos_' + a.id, emoji:'🏆', titulo:'Todos los finales', desc:a.titulo, ok: fins.length > 0 && fins.every(f => desc[f.num]) });
-    m.push({ id:'mapa_' + a.id, emoji:'🗺️', titulo:'Mapa completo', desc:a.titulo, ok: E.length > 0 && E.every(n => vis.has(Number(n))) });
+    m.push({ id:'todos_' + a.id, img:'trofeo', titulo:'Todos los finales', desc:a.titulo, ok: fins.length > 0 && fins.every(f => desc[f.num]) });
+    m.push({ id:'mapa_' + a.id, img:({ paleolitico:'montana', neolitico:'hoja' })[a.id] || 'mundo', titulo:'Mapa completo', desc:a.titulo, ok: E.length > 0 && E.every(n => vis.has(Number(n))) });
   });
   return m;
 }
@@ -1057,7 +1068,7 @@ function renderQuiz(){
       }).join('') + `</div>`;
     if(z.resp !== null){
       const e = escenasDe(z.aid)[Number(p.q.escena)];
-      h += `<div class="chewie" style="margin-top:14px"><img src="${chewieSrc('explorando')}" alt="" class="kit-img"><div class="bur"><b>${z.resp ? '¡Bien!' : '¡Casi!'}</b> ${e && e.dato ? esc(e.dato) : 'La respuesta es: ' + esc(p.q.correcta)}</div></div>
+      h += `<div class="chewie" style="margin-top:14px"><img src="${chewieSrc(z.resp ? 'leyendo' : 'sorprendido')}" alt="" class="kit-img"><div class="bur"><b>${z.resp ? '¡Bien!' : '¡Casi!'}</b> ${e && e.dato ? esc(e.dato) : 'La respuesta es: ' + esc(p.q.correcta)}</div></div>
         <button class="btn prim full" data-acc="sig">${z.i + 1 < z.ps.length ? 'Siguiente' : 'Ver resultado'}</button>`;
     }
   }

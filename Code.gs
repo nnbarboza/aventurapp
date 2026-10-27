@@ -8,7 +8,7 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.6.0';
+const VERSION = '0.8.0';
 
 const HEADERS = {
   Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo'],
@@ -20,6 +20,7 @@ const HEADERS = {
   Partidas:  ['id', 'ts', 'aventura_id', 'recorrido', 'final', 'jugadora'],
   Quiz:      ['aventura_id', 'escena', 'pregunta', 'correcta', 'incorrecta_1', 'incorrecta_2'],
   Quizzes:   ['id', 'ts', 'aventura_id', 'aciertos', 'total', 'jugadora'],
+  Invitados: ['username', 'nombre', 'avatar', 'creado', 'ultimo'],
   Config:    ['clave', 'valor', 'nota']
 };
 
@@ -65,6 +66,7 @@ const HANDLERS = {
   getBootstrap:   handleGetBootstrap,
   savePartida:    handleSavePartida,
   saveQuiz:       handleSaveQuiz,
+  saveInvitado:   handleSaveInvitado,
   borrarPartidas: handleBorrarPartidas
 };
 function _despachar(p) {
@@ -108,6 +110,26 @@ function handleSaveQuiz(p) {
     aciertos: Number(d.aciertos) || 0, total: Number(d.total) || 0, jugadora: d.jugadora || ''
   });
   return _json({ ok: true, data: { id: d.id } });
+}
+
+/** Apunta (o actualiza) un invitado: nombre, avatar, cuándo se creó y la última vez que jugó. */
+function handleSaveInvitado(p) {
+  const d = typeof p.payload === 'string' ? JSON.parse(p.payload) : (p.payload || {});
+  const u = String(d.username || '').trim();
+  if (!u) return _json({ ok: false, error: 'Falta el invitado.' });
+  const ts = d.ts || new Date().toISOString();
+  const sh = _ss().getSheetByName('Invitados'), vals = sh.getDataRange().getValues(), head = vals[0].map(String);
+  const iU = head.indexOf('username');
+  for (let r = 1; r < vals.length; r++) {
+    if (String(vals[r][iU]) === u) {
+      sh.getRange(r + 1, head.indexOf('nombre') + 1).setValue(d.nombre || vals[r][head.indexOf('nombre')]);
+      sh.getRange(r + 1, head.indexOf('avatar') + 1).setValue(d.avatar || vals[r][head.indexOf('avatar')]);
+      sh.getRange(r + 1, head.indexOf('ultimo') + 1).setValue(ts);
+      return _json({ ok: true, data: { username: u } });
+    }
+  }
+  _append('Invitados', { username: u, nombre: d.nombre || '', avatar: d.avatar || '', creado: ts, ultimo: ts });
+  return _json({ ok: true, data: { username: u } });
 }
 
 /** Destructiva: solo actúa si llega confirmar=si. Borra las partidas de UNA jugadora. */
