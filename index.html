@@ -191,6 +191,33 @@ nav.oculta{display:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
 .vacio{text-align:center;padding:30px 10px;color:var(--ink2)}
+/* categorías + selector de vista */
+.inicio-bar{display:flex;align-items:center;gap:8px;margin:0 0 14px}
+.inicio-bar .chips{flex:1;margin:0;padding-bottom:2px}
+.vista-sw{display:flex;border:2px solid var(--ink);border-radius:12px;overflow:hidden;flex-shrink:0}
+.vista-sw button{border:0;background:var(--paper);width:42px;height:40px;display:flex;align-items:center;justify-content:center}
+.vista-sw button+button{border-left:2px solid var(--ink)}
+.vista-sw button.on{background:var(--ink);color:#fff}
+.vista-sw svg{width:20px;height:20px}
+/* vista línea del tiempo */
+.lt{position:relative;padding:6px 0 10px}
+.lt-cam{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.lt-st{position:relative;display:flex;align-items:center;gap:14px;margin-bottom:26px;width:100%;border:0;background:none;padding:0;text-align:left}
+.lt-st.der{flex-direction:row-reverse;text-align:right}
+.lt-foto{width:128px;height:128px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);overflow:hidden;flex-shrink:0;box-shadow:3px 3px 0 var(--ink);display:flex;align-items:center;justify-content:center;font-size:48px}
+.lt-foto img{width:100%;height:100%;object-fit:cover}
+.lt-st.pronto .lt-foto{border-style:dashed;box-shadow:none;filter:grayscale(1);opacity:.6}
+.lt-info{flex:1;min-width:0}
+.lt-hace{display:inline-block;font-family:var(--fd);font-weight:700;font-size:13px;background:var(--ocre);color:#fff;border-radius:999px;padding:2px 10px;margin-bottom:4px}
+.lt-st.pronto .lt-hace{background:var(--ink2)}
+.lt-info h3{font-size:20px;margin:0 0 2px}
+.lt-info p{margin:0;font-size:13px;color:var(--ink2)}
+.lt-sell{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px}
+.lt-st.der .lt-sell{justify-content:flex-end}
+.lt-sell i{width:10px;height:10px;border-radius:50%;border:1.5px dashed var(--ink2)}
+.lt-sell i.ok{border:1.5px solid var(--ink);background:var(--ocre)}
+.lt-hoy{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--fd);font-weight:600}
+.lt-hoy img{width:70px;height:70px;border-radius:50%;border:3px solid var(--ink);background:var(--sun);object-fit:contain;padding:3px}
 /* desplegables por aventura */
 .plegable{margin-bottom:14px}
 .plegable>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:56px}
@@ -313,12 +340,12 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.8.0';
+const APP_VERSION = '0.9.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
 const LS = { datos:'avp_datos_v3', partidas:'avp_partidas_v1', cola:'avp_cola_v1', juegos:'avp_juegos_v2', user:'avp_user',
-             invitados:'avp_invitados_v1', quizzes:'avp_quizzes_v1', medallas:'avp_medallas_vistas_v1' };
+             invitados:'avp_invitados_v1', vista:'avp_vista_v1', quizzes:'avp_quizzes_v1', medallas:'avp_medallas_vistas_v1' };
 const INK = '#2B211B', OC = '#D9653B';
 
 /* ---------- utilidades ---------- */
@@ -613,7 +640,7 @@ const state = {
   partidas: leer(LS.partidas, []),          // [{id, ts, aventura_id, recorrido:'1-2-5', final}]
   juegosTodos: leer(LS.juegos, {}),        // por usuario y aventura: {gina:{paleolitico:{camino:[1,2], elecciones:['a']}}}
   usuarios: [], user: leer(LS.user, ''), invitados: leer(LS.invitados, []), pronto: [],
-  quiz: [], quizzes: leer(LS.quizzes, []), datosFiltro: 'todas', invForm: null, qz: null,
+  quiz: [], quizzes: leer(LS.quizzes, []), datosFiltro: 'todas', invForm: null, qz: null, vista: leer(LS.vista, { cat:'historia', modo:'tarjetas' }),
   juegoAid: null, mapaAid: null, mapaVolver: 'inicio', screen: 'inicio', ultimoNuevo: 0
 };
 
@@ -627,7 +654,7 @@ function normaliza(data){
     .map(u => Object.assign({}, u, { username:norm(u.username) }));
   /* Orden de la línea del tiempo: lo más antiguo primero (columna hace = años). */
   const orden = (a, b) => (Number(b.hace) || 0) - (Number(a.hace) || 0) || (Number(a.orden) || 99) - (Number(b.orden) || 99);
-  const todas = (d.aventuras || []).filter(a => a && a.id).map(a => Object.assign({}, a, { id:String(a.id).trim() }));
+  const todas = (d.aventuras || []).filter(a => a && a.id).map(a => Object.assign({}, a, { id:String(a.id).trim(), categoria:norm(a.categoria) || 'historia' }));
   state.aventuras = todas.filter(a => a.activa === undefined || a.activa === '' || truthy(a.activa)).sort(orden);
   state.pronto = todas.filter(a => norm(a.activa) === 'pronto').sort(orden);
   state.quiz = (d.quiz || []).filter(q => q && q.aventura_id && q.pregunta && q.correcta);
@@ -751,38 +778,81 @@ function elegirUsuario(){ goScreen('quien'); }
    INICIO
    ============================================================ */
 function haceTxt(a){ const n = Number(a.hace); return n ? 'Hace ' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' años' : ''; }
-function renderInicio(){
+const CATEGORIAS = [{ id:'historia', nombre:'Historia' }, { id:'ciencia', nombre:'Ciencia' }, { id:'naturaleza', nombre:'Naturaleza' }];
+const icoTarjetas = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="13" width="16" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+const icoLinea = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 V22" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/><circle cx="12" cy="5" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+function catsConAventuras(){ return CATEGORIAS.filter(c => state.aventuras.concat(state.pronto).some(a => a.categoria === c.id)); }
+function guardarVista(){ guardar(LS.vista, state.vista); }
+function tarjetaAventura(a){
+  const fins = finalesDe(a.id), desc = descubiertos(a.id);
+  const n = fins.filter(f => desc[f.num]).length;
+  const j = J()[a.id], enCurso = j && j.camino.length > 1 && !esFinal(escenasDe(a.id)[j.camino[j.camino.length - 1]]);
+  const qz = preguntasDisponibles(a.id).length >= 3, mejor = mejorQuiz(a.id);
+  return `<article class="card av" id="av-${esc(a.id)}" style="--av:${esc(a.color || '#9CCBE8')}">
+    <div class="av-ilus">${ilusAventura(a)}</div>
+    <div class="av-b">
+      <div class="av-epoca">${esc(a.epoca || '')}</div>
+      <h2>${esc(a.titulo)}</h2>
+      <p class="av-intro">${esc(a.intro || '')}</p>
+      <div class="av-prog"><div class="sellitos" aria-hidden="true">${fins.map(f => `<i class="${desc[f.num] ? 'ok' : ''} ${f.tipo === 'final' ? 'fz' : ''}"></i>`).join('')}</div>
+        <span>${n} de ${fins.length} finales</span></div>
+      <div class="av-acc">
+        <button class="btn prim" data-jugar="${esc(a.id)}">${enCurso ? 'Seguir' : (partidasDe(a.id).length ? 'Jugar otra vez' : '¡Jugar!')}</button>
+        ${qz ? `<button class="btn sun quiz ${mejor ? 'hecho' : ''}" data-quiz="${esc(a.id)}" aria-label="Quiz de Chewie"><img src="${chewieSrc('normal')}" alt="" class="kit-img" style="width:28px;height:28px;object-fit:contain">${mejor ? mejor.aciertos + '/' + mejor.total : 'Quiz'}</button>` : ''}
+        <button class="btn" data-mapa="${esc(a.id)}" aria-label="Ver el mapa">${icoMapa}</button>
+      </div>
+    </div></article>`;
+}
+/* Vista línea del tiempo: estaciones en zigzag, de lo más antiguo a hoy. */
+function lineaDelTiempo(avs){
   const u = yo();
+  let h = `<div class="lt">`;
+  avs.forEach((a, i) => {
+    const pronto = norm(a.activa) === 'pronto', fins = pronto ? [] : finalesDe(a.id), desc = pronto ? {} : descubiertos(a.id);
+    const img = a.imagen ? `<img src="img/aventuras/${esc(String(a.imagen).trim())}" alt="" class="kit-img">` : esc(a.emoji || '✨');
+    h += `<button class="lt-st ${i % 2 ? 'der' : ''} ${pronto ? 'pronto' : ''}" data-lt="${esc(a.id)}" ${pronto ? 'data-pronto="1"' : ''}>
+      <span class="lt-foto">${img}</span>
+      <span class="lt-info"><span class="lt-hace">${esc(haceTxt(a) || 'Próximamente')}</span><h3>${esc(a.titulo)}</h3>
+        <p>${pronto ? 'Próximamente' : fins.filter(f => desc[f.num]).length + ' de ' + fins.length + ' finales'}</p>
+        ${pronto ? '' : `<span class="lt-sell" aria-hidden="true">${fins.map(f => `<i class="${desc[f.num] ? 'ok' : ''}"></i>`).join('')}</span>`}</span></button>`;
+  });
+  h += `<div class="lt-hoy"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="lt-hace">Hoy</span>Tú estás aquí</div></div>`;
+  return h;
+}
+/* El caminito punteado se dibuja después de pintar, uniendo los centros de las fotos. */
+function dibujarCamino(){
+  const lt = $('#s-inicio .lt'); if(!lt) return;
+  const r0 = lt.getBoundingClientRect();
+  const pts = $$('.lt-foto, .lt-hoy img', lt).map(el => { const r = el.getBoundingClientRect(); return [r.left - r0.left + r.width / 2, r.top - r0.top + r.height / 2]; });
+  if(pts.length < 2) return;
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for(let k = 1; k < pts.length; k++){ const [x0, y0] = pts[k - 1], [x1, y1] = pts[k], my = (y0 + y1) / 2; d += ` C${x0} ${my} ${x1} ${my} ${x1} ${y1}`; }
+  lt.insertAdjacentHTML('afterbegin', `<svg class="lt-cam" aria-hidden="true"><path d="${d}" fill="none" stroke="${OC}" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/></svg>`);
+}
+function renderInicio(){
+  const u = yo(), cats = catsConAventuras();
+  if(!cats.some(c => c.id === state.vista.cat)) state.vista.cat = cats.length ? cats[0].id : 'historia';
+  const cat = state.vista.cat;
+  const avs = state.aventuras.filter(a => a.categoria === cat), pronto = state.pronto.filter(a => a.categoria === cat);
+  const conLinea = avs.concat(pronto).length > 1 && avs.concat(pronto).every(a => Number(a.hace) > 0);
+  const modo = conLinea ? state.vista.modo : 'tarjetas';
   let h = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
     <div class="yo"><button id="btnYo" class="yo-av" aria-label="Cambiar de jugador"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></button><p><b>¡Hola, ${esc(u.nombre || 'exploradora')}!</b><br>${u.invitado ? 'Hoy acompañas a Gina en sus aventuras.' : 'Cada decisión cambia la historia.'}</p></div>`;
-  if(!state.aventuras.length) h += `<div class="vacio card">Todavía no hay aventuras. Añade una en el Sheet.</div>`;
-  state.aventuras.forEach(a => {
-    const fins = finalesDe(a.id), desc = descubiertos(a.id);
-    const n = fins.filter(f => desc[f.num]).length;
-    const j = J()[a.id], enCurso = j && j.camino.length > 1 && !esFinal(escenasDe(a.id)[j.camino[j.camino.length - 1]]);
-    const qz = preguntasDisponibles(a.id).length >= 3, mejor = mejorQuiz(a.id);
-    h += `<article class="card av" style="--av:${esc(a.color || '#9CCBE8')}">
-      <div class="av-ilus">${ilusAventura(a)}</div>
-      <div class="av-b">
-        <div class="av-epoca">${esc(a.epoca || '')}</div>
-        <h2>${esc(a.titulo)}</h2>
-        <p class="av-intro">${esc(a.intro || '')}</p>
-        <div class="av-prog"><div class="sellitos" aria-hidden="true">${fins.map(f => `<i class="${desc[f.num] ? 'ok' : ''} ${f.tipo === 'final' ? 'fz' : ''}"></i>`).join('')}</div>
-          <span>${n} de ${fins.length} finales</span></div>
-        <div class="av-acc">
-          <button class="btn prim" data-jugar="${esc(a.id)}">${enCurso ? 'Seguir' : (partidasDe(a.id).length ? 'Jugar otra vez' : '¡Jugar!')}</button>
-          ${qz ? `<button class="btn sun quiz ${mejor ? 'hecho' : ''}" data-quiz="${esc(a.id)}" aria-label="Quiz de Chewie"><img src="${chewieSrc('normal')}" alt="" class="kit-img" style="width:28px;height:28px;object-fit:contain">${mejor ? mejor.aciertos + '/' + mejor.total : 'Quiz'}</button>` : ''}
-          <button class="btn" data-mapa="${esc(a.id)}" aria-label="Ver el mapa">${icoMapa}</button>
-        </div>
-      </div></article>`;
-  });
-  if(state.pronto.length) h += `<p class="pronto-t">Próximamente</p>`;
-  state.pronto.forEach(a => {
-    h += `<div class="card av-pronto" style="margin-bottom:12px"><span class="emo">${esc(a.emoji || '🔒')}</span>
-      <div><h2>${esc(a.titulo)}</h2><span style="font-size:14px">${esc(a.epoca || 'Próximamente')}</span></div></div>`;
-  });
+  h += `<div class="inicio-bar">${cats.length > 1 ? `<div class="chips">${cats.map(c => `<button class="chip ${c.id === cat ? 'on' : ''}" data-cat="${c.id}">${c.nombre}</button>`).join('')}</div>` : '<span style="flex:1"></span>'}
+    ${conLinea ? `<div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div>` : ''}</div>`;
+  if(!avs.length && !pronto.length) h += `<div class="vacio card">Todavía no hay aventuras aquí.</div>`;
+  if(modo === 'linea') h += lineaDelTiempo(avs.concat(pronto).sort((a, b) => Number(b.hace) - Number(a.hace)));
+  else {
+    avs.forEach(a => { h += tarjetaAventura(a); });
+    if(pronto.length) h += `<p class="pronto-t">Próximamente</p>`;
+    pronto.forEach(a => {
+      h += `<div class="card av-pronto" style="margin-bottom:12px"><span class="emo">${esc(a.emoji || '🔒')}</span>
+        <div><h2>${esc(a.titulo)}</h2><span style="font-size:14px">${esc(a.epoca || 'Próximamente')}</span></div></div>`;
+    });
+  }
   h += pie();
   $('#s-inicio').innerHTML = h;
+  if(modo === 'linea') requestAnimationFrame(dibujarCamino);
 }
 const icoMapa = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6 L9 4 L15 6 L21 4 L21 18 L15 20 L9 18 L3 20 Z M9 4 V18 M15 6 V20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
 const icoAtras = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -798,7 +868,16 @@ $('#s-inicio').addEventListener('click', e => {
   const q = e.target.closest('[data-quiz]'); if(q) return abrirQuiz(q.dataset.quiz, 'inicio');
   if(e.target.closest('#btnActualizar')) return forzarActualizacion();
   if(e.target.closest('#btnYo')) return elegirUsuario();
+  const c = e.target.closest('[data-cat]'); if(c){ state.vista.cat = c.dataset.cat; guardarVista(); return renderInicio(); }
+  const mo = e.target.closest('[data-modo]'); if(mo){ state.vista.modo = mo.dataset.modo; guardarVista(); renderInicio(); return window.scrollTo(0, 0); }
+  const st = e.target.closest('[data-lt]');
+  if(st){
+    if(st.dataset.pronto) return toast('¡Esta aventura llega pronto!');
+    state.vista.modo = 'tarjetas'; guardarVista(); renderInicio();
+    const card = $('#av-' + st.dataset.lt); if(card) card.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
 });
+window.addEventListener('resize', () => { if(state.screen === 'inicio' && state.vista.modo === 'linea'){ const s = $('#s-inicio .lt-cam'); if(s) s.remove(); dibujarCamino(); } });
 
 /* ============================================================
    JUEGO — el rollo de papel

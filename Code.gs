@@ -8,12 +8,12 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.8.0';
+const VERSION = '0.9.0';
 
 const HEADERS = {
   Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo'],
   Aventuras: ['id', 'titulo', 'epoca', 'intro', 'color', 'emoji', 'dibujo', 'orden', 'activa',
-              'kit', 'fondo', 'prota', 'elementos', 'imagen', 'hace'],
+              'kit', 'fondo', 'prota', 'elementos', 'imagen', 'hace', 'categoria'],
   Escenas:   ['aventura_id', 'num', 'tipo', 'titulo', 'texto', 'dato',
               'opcion_a', 'destino_a', 'opcion_b', 'destino_b', 'dibujo', 'emoji', 'sonido',
               'fondo', 'prota', 'elementos', 'imagen'],
@@ -174,6 +174,7 @@ function setup() {
   }
   if (!_readSheet('Aventuras').length) _sembrar();
   _completarV06();
+  _completarV09();
   Logger.log('✅ setup listo. Ahora: Implementar › Nueva implementación › Aplicación web.');
 }
 
@@ -259,6 +260,17 @@ function _completarV06() {
   if (avs.indexOf('metales') < 0) _append('Aventuras', METALES_PRONTO);
   if (!_readSheet('Quiz').length) QUIZ_SEMILLA.forEach(q => _append('Quiz', {
     aventura_id: q[0], escena: q[1], pregunta: q[2], correcta: q[3], incorrecta_1: q[4], incorrecta_2: q[5] }));
+}
+
+/** v0.9: categorías. Las de historia se marcan solas; las temáticas de ciencia entran como «pronto». */
+function _completarV09() {
+  ['paleolitico', 'neolitico', 'metales'].forEach(id => _rellenar('Aventuras', 'id', id, 'categoria', 'historia'));
+  const avs = _readSheet('Aventuras').map(a => String(a.id));
+  [
+    { id: 'cuerpo', titulo: 'El cuerpo humano', epoca: 'Un viaje por dentro de ti', emoji: '🫀', color: '#F2A7A0' },
+    { id: 'oceano', titulo: 'El océano', epoca: 'Hasta el fondo del mar', emoji: '🐙', color: '#9CCBE8' },
+    { id: 'espacio', titulo: 'El espacio', epoca: 'Misión a la Luna', emoji: '🚀', color: '#C8B6E2' }
+  ].forEach((a, i) => { if (avs.indexOf(a.id) < 0) _append('Aventuras', Object.assign({ categoria: 'ciencia', activa: 'pronto', orden: 10 + i }, a)); });
 }
 
 /** Revisa que cada aventura se pueda jugar: destinos que existen, decisiones con 2 opciones,
