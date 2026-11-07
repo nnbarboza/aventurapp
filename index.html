@@ -191,6 +191,31 @@ nav.oculta{display:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
 .vacio{text-align:center;padding:30px 10px;color:var(--ink2)}
+/* mochila */
+.ico-btn.moch{position:relative;font-size:20px}
+.ico-btn.moch b{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;border-radius:10px;background:var(--ocre);color:#fff;font-size:12px;line-height:20px;text-align:center;padding:0 4px}
+.ico-btn.moch.pop{animation:pop .5s}
+.mov{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mov span{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:800;border:2px solid var(--ink)}
+.mov .gana{background:var(--mint)}
+.mov .gasta{background:var(--soft)}
+.mov .falta{background:var(--rose);border-style:dashed}
+.op.op-c{background:#FFF4D6;border-style:dashed}
+.op.op-c .l{background:var(--sun)}
+.velo{position:fixed;inset:0;background:rgba(43,33,27,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.hoja{width:100%;max-width:var(--maxw);max-height:80vh;overflow-y:auto;background:var(--paper);border:2px solid var(--ink);border-bottom:0;border-radius:22px 22px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));animation:sube .25s ease-out}
+@keyframes sube{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.hoja-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hoja-h h2{flex:1;font-size:22px}
+.obj{display:flex;gap:12px;align-items:center;padding:10px 12px;margin-bottom:10px}
+.obj .oe{width:52px;height:52px;flex-shrink:0;border-radius:14px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden}
+.obj .oe img{width:100%;height:100%;object-fit:contain}
+.obj h3{font-size:16px;margin:0 0 2px}
+.obj p{margin:0;font-size:14px;line-height:1.35;color:var(--ink2)}
+.obj.oculto{border-style:dashed;box-shadow:none;background:transparent}
+.obj.oculto .oe{filter:grayscale(1);opacity:.4}
+.qz-nivel{display:inline-block;font-family:var(--fd);font-weight:600;font-size:12px;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;background:var(--soft)}
+.qz-nivel.n2{background:#FCEBB3}.qz-nivel.n3{background:#FBD3C6}
 /* categorías + selector de vista */
 .inicio-bar{display:flex;align-items:center;gap:8px;margin:0 0 14px}
 .inicio-bar .chips{flex:1;margin:0;padding-bottom:2px}
@@ -340,7 +365,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.9.0';
+const APP_VERSION = '0.10.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -639,7 +664,7 @@ const state = {
   config: {}, aventuras: [], escenas: {},   // escenas[aid][num] = escena
   partidas: leer(LS.partidas, []),          // [{id, ts, aventura_id, recorrido:'1-2-5', final}]
   juegosTodos: leer(LS.juegos, {}),        // por usuario y aventura: {gina:{paleolitico:{camino:[1,2], elecciones:['a']}}}
-  usuarios: [], user: leer(LS.user, ''), invitados: leer(LS.invitados, []), pronto: [],
+  usuarios: [], user: leer(LS.user, ''), objetos: {}, mochPop: false, invitados: leer(LS.invitados, []), pronto: [],
   quiz: [], quizzes: leer(LS.quizzes, []), datosFiltro: 'todas', invForm: null, qz: null, vista: leer(LS.vista, { cat:'historia', modo:'tarjetas' }),
   juegoAid: null, mapaAid: null, mapaVolver: 'inicio', screen: 'inicio', ultimoNuevo: 0
 };
@@ -658,13 +683,16 @@ function normaliza(data){
   state.aventuras = todas.filter(a => a.activa === undefined || a.activa === '' || truthy(a.activa)).sort(orden);
   state.pronto = todas.filter(a => norm(a.activa) === 'pronto').sort(orden);
   state.quiz = (d.quiz || []).filter(q => q && q.aventura_id && q.pregunta && q.correcta);
+  state.objetos = {};
+  (d.objetos || []).forEach(o => { if(o && o.aventura_id && o.id) (state.objetos[String(o.aventura_id).trim()] = state.objetos[String(o.aventura_id).trim()] || {})[norm(o.id)] = o; });
   state.escenas = {};
   (d.escenas || []).forEach(e => {
     if(!e || !e.aventura_id || !e.num) return;
     const aid = String(e.aventura_id).trim(), n = Number(e.num);
     (state.escenas[aid] = state.escenas[aid] || {})[n] = Object.assign({}, e, {
       num:n, tipo:String(e.tipo || 'decision').trim().toLowerCase(),
-      destino_a:Number(e.destino_a) || 0, destino_b:Number(e.destino_b) || 0
+      destino_a:Number(e.destino_a) || 0, destino_b:Number(e.destino_b) || 0, destino_c:Number(e.destino_c) || 0,
+      sino_a:Number(e.sino_a) || 0, sino_b:Number(e.sino_b) || 0, sino_c:Number(e.sino_c) || 0
     });
   });
 }
@@ -679,12 +707,62 @@ const esFinal = (e) => e && (e.tipo === 'fin' || e.tipo === 'final');
 function finalesDe(aid){ return Object.values(escenasDe(aid)).filter(esFinal).sort((a, b) => a.num - b.num); }
 function partidasDe(aid){ return state.partidas.filter(p => p.aventura_id === aid && norm(p.jugadora) === state.user); }
 function descubiertos(aid){ const m = {}; partidasDe(aid).forEach(p => { m[p.final] = (m[p.final] || 0) + 1; }); return m; }
+function objetosEncontrados(aid){
+  const s = new Set();
+  partidasDe(aid).forEach(p => lista(p.objetos).forEach(x => s.add(x)));
+  if(tieneMochila(aid)) recorrer(aid, J()[aid]).todos.forEach(x => s.add(x));
+  return s;
+}
 function visitadas(aid){
   const s = new Set();
   partidasDe(aid).forEach(p => String(p.recorrido || '').split('-').forEach(n => n && s.add(Number(n))));
   const j = J()[aid]; if(j) j.camino.forEach(n => s.add(n));
   return s;
 }
+/* ============================================================
+   MOCHILA — no se guarda: se reconstruye recorriendo el camino.
+   Así «Me arrepiento» y retomar una partida funcionan solos.
+     escena.obtiene            → lo que encuentras al llegar
+     opcion_X + requiere_X     → si te falta algo, vas a sino_X
+     obtiene_X / gasta_X       → lo que ganas / entregas al elegir
+     opcion_c                  → solo aparece si llevas requiere_c
+   ============================================================ */
+const lista = (s) => String(s == null ? '' : s).split(',').map(norm).filter(Boolean);
+const tieneMochila = (aid) => Object.keys(state.objetos[aid] || {}).length > 0;
+const objeto = (aid, id) => (state.objetos[aid] || {})[id] || { id:id, nombre:id, emoji:'🎒' };
+function cumple(inv, req){ return lista(req).every(x => inv.has(x)); }
+/* Devuelve la mochila al final del camino y, por cada paso, qué pasó con ella. */
+function recorrer(aid, j){
+  const E = escenasDe(aid), inv = new Set(), eventos = [], todos = new Set();
+  const add = (ev, ids) => ids.forEach(x => { if(!inv.has(x)){ inv.add(x); ev.gana.push(x); } todos.add(x); });
+  (j ? j.camino : []).forEach((n, i) => {
+    const ev = eventos[i] = eventos[i] || { gana:[], gasta:[], falta:[] }, e = E[n];
+    if(!e) return;
+    add(ev, lista(e.obtiene));
+    const el = j.elecciones[i]; if(!el) return;
+    const k = el[0], sino = el.indexOf('!') > 0;
+    const sig = eventos[i + 1] = { gana:[], gasta:[], falta:[] };
+    if(sino){ sig.falta = lista(e['requiere_' + k]).filter(x => !inv.has(x)); return; }
+    lista(e['gasta_' + k]).forEach(x => { if(inv.delete(x)) sig.gasta.push(x); });
+    add(sig, lista(e['obtiene_' + k]));
+  });
+  return { inv:inv, eventos:eventos, todos:todos };
+}
+function chipObj(aid, id, cls, pre){ const o = objeto(aid, id); return `<span class="${cls}">${pre}${esc(o.emoji || '🎒')} ${esc(o.nombre)}</span>`; }
+function iconoObj(aid, o){
+  return o.imagen ? `<img src="img/objetos/${esc(String(o.imagen).trim())}" alt="" class="kit-img">` : esc(o.emoji || '🎒');
+}
+function abrirMochila(){
+  const aid = state.juegoAid, r = recorrer(aid, J()[aid]), its = Array.from(r.inv);
+  const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
+  v.innerHTML = `<div class="hoja" role="dialog" aria-label="Tu mochila"><div class="hoja-h"><span style="font-size:30px">🎒</span><h2>Tu mochila</h2><button class="ico-btn" data-cerrar aria-label="Cerrar">✕</button></div>
+    ${its.length ? its.map(id => { const o = objeto(aid, id); return `<div class="card obj"><span class="oe">${iconoObj(aid, o)}</span><div><h3>${esc(o.nombre)}</h3><p>${esc(o.descripcion || '')}</p></div></div>`; }).join('')
+      : `<p class="muted" style="text-align:center;margin:20px 0">Tu mochila está vacía.<br>¡Busca cosas útiles por el camino!</p>`}
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Lo que llevas puede abrir caminos nuevos… o salvarte de un desastre.</p></div>`;
+  document.body.appendChild(v);
+  v.addEventListener('click', e => { if(e.target === v || e.target.closest('[data-cerrar]')) v.remove(); });
+}
+
 function inicio(aid){ const e = escenasDe(aid); return e[1] ? 1 : Math.min.apply(null, Object.keys(e).map(Number)); }
 
 /* ============================================================
@@ -897,30 +975,39 @@ function nuevoJuego(aid, pintar){
 function renderJuego(){
   const aid = state.juegoAid, a = aventura(aid), j = J()[aid], E = escenasDe(aid);
   if(!a || !j){ goScreen('inicio'); return; }
+  const moch = tieneMochila(aid), r = moch ? recorrer(aid, j) : null;
   let h = `<div class="topbar"><button class="ico-btn" data-acc="salir" aria-label="Volver">${icoAtras}</button>
-    <h1>${esc(a.titulo)}</h1><button class="ico-btn" data-acc="mapa" aria-label="Mapa">${icoMapa}</button></div><div class="rollo">`;
+    <h1>${esc(a.titulo)}</h1>${moch ? `<button class="ico-btn moch ${state.mochPop ? 'pop' : ''}" data-acc="mochila" aria-label="Mochila">🎒<b>${r.inv.size}</b></button>` : ''}<button class="ico-btn" data-acc="mapa" aria-label="Mapa">${icoMapa}</button></div><div class="rollo">`;
+  state.mochPop = false;
   j.camino.forEach((num, i) => {
     const e = E[num], ult = i === j.camino.length - 1;
     if(i > 0) h += `<div class="corte">${icoTijera}desenrolla</div>`;
     if(!e){ h += `<article class="pan"><p class="txt">Esta parte de la historia todavía no existe (escena ${num}).</p>
       <button class="btn full" data-acc="deshacer">↩ Volver atrás</button></article>`; return; }
-    h += panel(aid, e, ult ? null : j.elecciones[i], ult, ult && num === state.ultimoNuevo);
+    h += panel(aid, e, ult ? null : j.elecciones[i], ult, ult && num === state.ultimoNuevo, r ? r.eventos[i] : null, r ? r.inv : null);
   });
   h += `</div>`;
   $('#s-juego').innerHTML = h;
 }
-function panel(aid, e, elegida, activa, nuevo){
+function panel(aid, e, elegida, activa, nuevo, ev, inv){
   const fin = esFinal(e), feliz = e.tipo === 'final';
   let h = `<article class="pan ${fin ? (feliz ? 'final' : 'fin') : ''} ${nuevo ? 'nuevo' : ''}">
     <div class="pan-h"><span class="num">${e.num}</span><h2>${esc(e.titulo)}</h2>${e.sonido ? `<span class="sonido" aria-hidden="true">${esc(e.sonido)}</span>` : ''}</div>
     ${ilusEscena(aid, e)}
     <p class="txt">${esc(e.texto)}</p>`;
+  if(ev && (ev.gana.length || ev.gasta.length || ev.falta.length)) h += `<div class="mov">` +
+    ev.falta.map(x => chipObj(aid, x, 'falta', 'Te faltaba: ')).join('') +
+    ev.gasta.map(x => chipObj(aid, x, 'gasta', 'Entregas: ')).join('') +
+    ev.gana.map(x => chipObj(aid, x, 'gana', '🎒 + ')).join('') + `</div>`;
   if(!fin){
     if(e.dato) h += `<details class="sabias"><summary><img src="${chewieSrc('oliendo')}" alt="" class="kit-img">Chewie sabe algo…</summary>
       <div class="chewie" style="margin-top:6px"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>¿Sabías que…?</b> ${esc(e.dato)}</div></div></details>`;
-    h += `<div class="ops">` + ['a', 'b'].filter(k => e['opcion_' + k]).map(k => {
-      const cls = elegida ? (elegida === k ? 'elegida' : 'descartada') : '';
-      return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
+    const el = elegida ? elegida[0] : null;
+    /* La opción C solo existe si llevas lo que pide (o si ya la elegiste en este camino). */
+    const ks = ['a', 'b'].concat(e.opcion_c && (el === 'c' || (inv && activa && cumple(inv, e.requiere_c))) ? ['c'] : []).filter(k => e['opcion_' + k]);
+    h += `<div class="ops">` + ks.map(k => {
+      const cls = (el ? (el === k ? 'elegida' : 'descartada') : '') + (k === 'c' ? ' op-c' : '');
+      return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k === 'c' ? '🎒' : k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
     }).join('') + `</div>`;
     if(activa && J()[aid].camino.length > 1) h += `<div style="margin-top:12px;text-align:center"><button class="btn chico" data-acc="deshacer">↩ Me arrepiento</button></div>`;
   } else {
@@ -946,12 +1033,21 @@ $('#s-juego').addEventListener('click', e => {
   if(acc === 'otra') nuevoJuego(aid, true);
   if(acc === 'deshacer') deshacer();
   if(acc === 'quiz') abrirQuiz(aid, 'juego');
+  if(acc === 'mochila') abrirMochila();
 });
 function elegir(k){
   const aid = state.juegoAid, j = J()[aid], E = escenasDe(aid);
-  const e = E[j.camino[j.camino.length - 1]], dest = e && e['destino_' + k];
+  const e = E[j.camino[j.camino.length - 1]];
+  if(!e) return;
+  let dest = e['destino_' + k], marca = k;
+  if(tieneMochila(aid)){
+    const inv = recorrer(aid, j).inv;
+    if(k === 'c' && !cumple(inv, e.requiere_c)) return;
+    if(k !== 'c' && e['requiere_' + k] && !cumple(inv, e['requiere_' + k])){ dest = e['sino_' + k]; marca = k + '!'; }
+    if(lista(e['obtiene_' + k]).length || lista(E[dest] && E[dest].obtiene).length) state.mochPop = true;
+  }
   if(!dest) return;
-  j.elecciones.push(k); j.camino.push(dest);
+  j.elecciones.push(marca); j.camino.push(dest);
   state.ultimoNuevo = dest;
   const sig = E[dest];
   if(esFinal(sig)) registrarPartida(aid, j.camino.slice(), dest);
@@ -1015,8 +1111,10 @@ function renderFinales(){
    CUADERNO DE DATOS
    ============================================================ */
 function statsDe(avs){
-  const s = { jugadas:0, total:avs.length, partidas:0, felices:0, felicesT:0, fatales:0, fatalesT:0, datos:0, datosT:0, vis:0, escT:0 };
+  const s = { jugadas:0, total:avs.length, partidas:0, felices:0, felicesT:0, fatales:0, fatalesT:0, datos:0, datosT:0, vis:0, escT:0, obj:0, objT:0 };
   avs.forEach(a => {
+    const objs = Object.keys(state.objetos[a.id] || {}), enc = objetosEncontrados(a.id);
+    s.objT += objs.length; s.obj += objs.filter(x => enc.has(x)).length;
     const ps = partidasDe(a.id), desc = descubiertos(a.id), vis = visitadas(a.id), E = Object.values(escenasDe(a.id));
     if(ps.length) s.jugadas++;
     s.partidas += ps.length;
@@ -1041,6 +1139,7 @@ function renderDatos(){
       <div class="card st"><img src="img/marca/stats/desastre.webp" alt=""><b>${s.fatales}<small>/${s.fatalesT}</small></b><span>finales desastre</span></div>
       <div class="card st"><img src="img/marca/stats/datos.webp" alt=""><b>${s.datos}<small>/${s.datosT}</small></b><span>datos descubiertos</span></div>
       <div class="card st"><img src="img/marca/stats/mapa.webp" alt=""><b>${pct}<small>%</small></b><span>mapa explorado</span></div>
+      ${s.objT ? `<div class="card st"><img src="img/marca/stats/objetos.webp" alt=""><b>${s.obj}<small>/${s.objT}</small></b><span>objetos encontrados</span></div>` : ''}
     </div>`;
   avs.forEach(a => {
     const vis = visitadas(a.id);
@@ -1053,6 +1152,15 @@ function renderDatos(){
       else h += `<div class="card dt oculto"><span class="num">?</span><div><h3>Dato escondido</h3><p>Sigue explorando para descubrirlo.</p></div></div>`;
     });
     h += `</div></details>`;
+    const objs = Object.values(state.objetos[a.id] || {});
+    if(objs.length){
+      const enc = objetosEncontrados(a.id), n2 = objs.filter(o => enc.has(norm(o.id))).length;
+      h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>🎒 Objetos · ${esc(a.titulo)}</strong><span>Lo que has llevado en la mochila</span></span>
+        <span class="pl-n">${n2}<small>/${objs.length}</small></span><span class="chev" aria-hidden="true">▾</span></summary><div class="pl-body">` +
+        objs.map(o => enc.has(norm(o.id))
+          ? `<div class="card obj"><span class="oe">${iconoObj(a.id, o)}</span><div><h3>${esc(o.nombre)}</h3><p>${esc(o.dato || o.descripcion || '')}</p></div></div>`
+          : `<div class="card obj oculto"><span class="oe">${iconoObj(a.id, o)}</span><div><h3>Objeto escondido</h3><p>Aún no lo has metido en tu mochila.</p></div></div>`).join('') + `</div></details>`;
+    }
   });
   $('#s-datos').innerHTML = h;
 }
@@ -1078,6 +1186,8 @@ function medallas(){
     const fins = finalesDe(a.id), desc = descubiertos(a.id), E = Object.keys(escenasDe(a.id)), vis = visitadas(a.id);
     m.push({ id:'todos_' + a.id, img:'trofeo', titulo:'Todos los finales', desc:a.titulo, ok: fins.length > 0 && fins.every(f => desc[f.num]) });
     m.push({ id:'mapa_' + a.id, img:({ paleolitico:'montana', neolitico:'hoja' })[a.id] || 'mundo', titulo:'Mapa completo', desc:a.titulo, ok: E.length > 0 && E.every(n => vis.has(Number(n))) });
+    if(tieneMochila(a.id)){ const objs = Object.keys(state.objetos[a.id]), enc = objetosEncontrados(a.id);
+      m.push({ id:'objetos_' + a.id, img:'huella', titulo:'Mochila completa', desc:a.titulo, ok: objs.every(x => enc.has(x)) }); }
   });
   return m;
 }
@@ -1093,9 +1203,21 @@ function avisarMedallas(){
 /* ============================================================
    QUIZ DE CHEWIE — preguntas de las escenas que ya visitaste
    ============================================================ */
+/* Preguntas con escena 0 son generales (lo que se da en clase): disponibles tras la primera partida. */
 function preguntasDisponibles(aid){
   const vis = visitadas(aid);
+  if(!partidasDe(aid).length) return [];
   return state.quiz.filter(q => String(q.aventura_id) === aid && (!Number(q.escena) || vis.has(Number(q.escena))));
+}
+const nivelDe = (q) => Math.min(3, Math.max(1, Number(q.nivel) || 1));
+/* Elige N preguntas repartidas por dificultad (40 % fáciles, 40 % medias, 20 % difíciles) y las ordena de fácil a difícil. */
+function elegirPreguntas(aid){
+  const a = aventura(aid), N = Number(a && a.quiz_n) || 5, disp = barajar(preguntasDisponibles(aid));
+  const por = [1, 2, 3].map(n => disp.filter(q => nivelDe(q) === n));
+  const cuota = [Math.round(N * .4), Math.round(N * .4)]; cuota.push(N - cuota[0] - cuota[1]);
+  let sel = []; por.forEach((g, i) => { sel = sel.concat(g.slice(0, cuota[i])); });
+  disp.forEach(q => { if(sel.length < N && sel.indexOf(q) < 0) sel.push(q); });
+  return sel.slice(0, N).sort((x, y) => nivelDe(x) - nivelDe(y));
 }
 function barajar(a){ a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function mejorQuiz(aid){
@@ -1110,7 +1232,7 @@ function abrirQuiz(aid, volver){
   empezarQuiz(aid, volver);
 }
 function empezarQuiz(aid, volver){
-  const ps = barajar(preguntasDisponibles(aid)).slice(0, 5).map(q => ({ q:q, ops:barajar([q.correcta, q.incorrecta_1, q.incorrecta_2].filter(Boolean)) }));
+  const ps = elegirPreguntas(aid).map(q => ({ q:q, ops:barajar([q.correcta, q.incorrecta_1, q.incorrecta_2].filter(Boolean)) }));
   if(ps.length < 3){ toast('Explora más escenas para desbloquear el quiz'); return; }
   state.qz = null;
   state.qz = { aid:aid, volver:volver || 'inicio', ps:ps, i:0, res:[], resp:null };
@@ -1138,7 +1260,7 @@ function renderQuiz(){
       <div class="fin-acc"><button class="btn prim full" data-acc="otra">Repetir para mejorar</button><button class="btn full" data-acc="salir">Volver</button></div></div>`;
   } else {
     const p = z.ps[z.i];
-    h += `<div class="chewie"><img src="${chewieSrc(z.resp === null ? 'oliendo' : z.resp ? 'comiendo' : 'sorprendido')}" alt="" class="kit-img"><div class="bur"><b>Pregunta ${z.i + 1} de ${z.ps.length}</b></div></div>
+    h += `<div class="chewie"><img src="${chewieSrc(z.resp === null ? 'oliendo' : z.resp ? 'comiendo' : 'sorprendido')}" alt="" class="kit-img"><div class="bur"><b>Pregunta ${z.i + 1} de ${z.ps.length}</b>${p.q.nivel ? `<span class="qz-nivel n${nivelDe(p.q)}">${['Fácil ⭐', 'Media ⭐⭐', 'Difícil ⭐⭐⭐'][nivelDe(p.q) - 1]}</span>` : ''}</div></div>
       <p class="qz-p">${esc(p.q.pregunta)}</p><div class="ops">` +
       p.ops.map((o, k) => {
         let cls = '';
@@ -1187,7 +1309,7 @@ function niveles(E){
   const lvl = {}, q = [inicio(state.mapaAid)]; lvl[q[0]] = 0;
   while(q.length){
     const n = q.shift(), e = E[n]; if(!e) continue;
-    [e.destino_a, e.destino_b].forEach(d => { if(d && E[d] && lvl[d] === undefined){ lvl[d] = lvl[n] + 1; q.push(d); } });
+    [e.destino_a, e.destino_b, e.destino_c, e.sino_a, e.sino_b].forEach(d => { if(d && E[d] && lvl[d] === undefined){ lvl[d] = lvl[n] + 1; q.push(d); } });
   }
   const max = Math.max.apply(null, Object.values(lvl).concat([0]));
   Object.keys(E).forEach(n => { if(lvl[n] === undefined) lvl[n] = max + 1; });
@@ -1199,8 +1321,8 @@ function renderMapa(){
   const vis = visitadas(aid), lvl = niveles(E);
   const filas = {};
   Object.keys(E).map(Number).sort((x, y) => x - y).forEach(n => { (filas[lvl[n]] = filas[lvl[n]] || []).push(n); });
-  const W = 340, RH = 74, R = 17, pos = {};
   const nf = Object.keys(filas).length;
+  const W = 340, RH = nf > 9 ? 62 : 74, R = 17, pos = {};
   Object.keys(filas).forEach(l => { const f = filas[l]; f.forEach((n, i) => { pos[n] = { x: (i + 1) * W / (f.length + 1), y: 34 + Number(l) * RH }; }); });
   const H = 34 + (nf - 1) * RH + 34;
   /* El camino a resaltar: la partida en curso o la última terminada. */
@@ -1212,7 +1334,7 @@ function renderMapa(){
   Object.keys(E).map(Number).forEach(n => {
     if(!vis.has(n)) return;
     const e = E[n];
-    [e.destino_a, e.destino_b].forEach(d => {
+    Array.from(new Set([e.destino_a, e.destino_b, e.destino_c, e.sino_a, e.sino_b])).forEach(d => {
       if(!d || !pos[d]) return;
       const p1 = pos[n], p2 = pos[d], on = enCamino.has(n + '>' + d);
       const my = (p1.y + p2.y) / 2;
@@ -1243,7 +1365,8 @@ $('#s-mapa').addEventListener('click', e => {
    PROGRESO + BACKEND (Apps Script por GET, como el resto de apps)
    ============================================================ */
 function registrarPartida(aid, camino, final){
-  const p = { id:uid(), ts:new Date().toISOString(), aventura_id:aid, recorrido:camino.join('-'), final:final, jugadora:state.user };
+  const objs = tieneMochila(aid) ? Array.from(recorrer(aid, J()[aid]).todos).join(',') : '';
+  const p = { id:uid(), ts:new Date().toISOString(), aventura_id:aid, recorrido:camino.join('-'), final:final, jugadora:state.user, objetos:objs };
   state.partidas.push(p); guardar(LS.partidas, state.partidas);
   const cola = leer(LS.cola, []); cola.push({ action:'savePartida', payload:p }); guardar(LS.cola, cola);
   flush(); avisarMedallas();

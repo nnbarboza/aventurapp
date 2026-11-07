@@ -31,7 +31,13 @@ Funciona **sin backend** (modo local, con la aventura del Paleolítico incluida)
 - **Quiz de Chewie:** pestaña `Quiz` (`aventura_id · escena · pregunta · correcta · incorrecta_1 · incorrecta_2`). Solo pregunta por escenas ya visitadas (mínimo 3). Resultados en `Quizzes`.
 - **Neolítico (La Draga):** 33 escenas, 14 finales desastre, 2 finales felices.
 
-## Puesta en marcha
+### Novedades v0.10 — la mochila
+- **Mochila** (Edad de los Metales): lo que recoges cambia la historia. Columnas nuevas en Escenas:
+  `obtiene` (lo que encuentras al llegar) · `requiere_a/b` + `sino_a/b` (si te falta, vas a otra escena) · `opcion_c` + `destino_c` + `requiere_c` (opción secreta que solo aparece si llevas el objeto) · `obtiene_a/b/c` · `gasta_a/b/c`.
+- Pestaña **Objetos**: `aventura_id · id · nombre · emoji · imagen · descripcion · dato`. Imagen opcional en `img/objetos/`.
+- La mochila no se guarda: se recalcula con el camino, así «Me arrepiento» funciona solo.
+- **Quiz por niveles**: columna `nivel` (1 fácil, 2 media, 3 difícil) y `quiz_n` en Aventuras (nº de preguntas). Las preguntas con `escena = 0` son de teoría general y salen tras la primera partida.
+
 
 1. **Repo**: crea `nnbarboza/aventurapp`, sube `index.html`, `manifest.json`, `sw.js` y la carpeta `img/`. Activa GitHub Pages en `main` (raíz). Ya se puede jugar en modo local.
 2. **Sheet**: crea un Google Sheet «AVENTURApp - Datos» → Extensiones › Apps Script → pega `Code.gs` entero → Guardar.
