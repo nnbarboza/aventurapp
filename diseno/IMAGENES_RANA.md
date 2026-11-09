@@ -7,7 +7,7 @@
 ## Prompt base (adjunta `ui-kit.png` y una imagen de los Metales)
 
 > Ilustraciones para un libro infantil de "elige tu propia aventura". Mismo estilo EXACTO que las imágenes adjuntas: trazo negro hecho a mano, colores suaves, personajes adorables y graciosos. Sin texto.
-> Personajes: usa las referencias adjuntas de Gina, papá y la abuela si las tienes. Lola y Diana son primas pequeñas de Gina: en el sueño son renacuajos/ranitas, Lola con un lacito y Diana con dos coletitas.
+> Personajes: usa las referencias adjuntas de Gina, papá y la abuela si las tienes. Lola y Diana son amiguitas pequeñas de Gina: en el sueño son renacuajos/ranitas, Lola con un lacito y Diana con dos coletitas.
 > Historia: Gina (niña de 8 años, pelo rubio largo y alborotado) sueña que es un renacuajo que se convierte en rana. Durante el sueño, Gina ES el renacuajo/la rana: dibújala como un renacuajo (o rana) adorable con su mechón de pelo rubio alborotado para que se la reconozca.
 > Ambientación: una charca de agua dulce en España, con plantas acuáticas, nenúfares, juncos y barro en el fondo.
 > Rigor científico: rana común (verde con manchas). Metamorfosis en orden: huevos en masas gelatinosas → renacuajo con cola → patas traseras → patas delanteras → la cola se acorta → ranita. Animales reales de charca: ninfa de libélula, escarabajo buceador, garza, culebra de agua, peces.
