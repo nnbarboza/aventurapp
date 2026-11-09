@@ -196,12 +196,14 @@ nav.oculta{display:none}
 .ico-btn.moch b{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;border-radius:10px;background:var(--ocre);color:#fff;font-size:12px;line-height:20px;text-align:center;padding:0 4px}
 .ico-btn.moch.pop{animation:pop .5s}
 .mov{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.mov span{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:800;border:2px solid var(--ink)}
+.mov .chip-ico{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border:0;padding:0;background:none!important}
+.mov .chip-ico img{width:22px;height:22px;object-fit:contain}
+.mov>span{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:800;border:2px solid var(--ink)}
 .mov .gana{background:var(--mint)}
 .mov .gasta{background:var(--soft)}
 .mov .falta{background:var(--rose);border-style:dashed}
 .op.op-c{background:#FFF4D6;border-style:dashed}
-.op.op-c .l{background:var(--sun)}
+.op.op-c .l{background:var(--sun);overflow:hidden}
 .velo{position:fixed;inset:0;background:rgba(43,33,27,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
 .hoja{width:100%;max-width:var(--maxw);max-height:80vh;overflow-y:auto;background:var(--paper);border:2px solid var(--ink);border-bottom:0;border-radius:22px 22px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));animation:sube .25s ease-out}
 @keyframes sube{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
@@ -365,7 +367,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.10.0';
+const APP_VERSION = '0.11.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -612,6 +614,7 @@ document.addEventListener('error', function(e){
   const im = e.target;
   if(!im || !im.classList) return;
   if(im.classList.contains('kit-img')){ im.remove(); return; }
+  if(im.classList.contains('obj-img')){ const s = document.createElement('span'); s.textContent = im.dataset.emo || '🎒'; im.replaceWith(s); return; }
   if(!im.classList.contains('ilus-img')) return;
   FALTAN.add(im.getAttribute('src'));
   const box = im.parentNode;
@@ -748,14 +751,16 @@ function recorrer(aid, j){
   });
   return { inv:inv, eventos:eventos, todos:todos };
 }
-function chipObj(aid, id, cls, pre){ const o = objeto(aid, id); return `<span class="${cls}">${pre}${esc(o.emoji || '🎒')} ${esc(o.nombre)}</span>`; }
+/* Icono del objeto: img/objetos/<aventura>_<id>.webp (o la columna imagen); si no existe, su emoji. */
 function iconoObj(aid, o){
-  return o.imagen ? `<img src="img/objetos/${esc(String(o.imagen).trim())}" alt="" class="kit-img">` : esc(o.emoji || '🎒');
+  const f = o.imagen ? String(o.imagen).trim() : `${aid}_${norm(o.id)}.webp`;
+  return `<img src="img/objetos/${esc(f)}" alt="" class="obj-img" data-emo="${esc(o.emoji || '🎒')}">`;
 }
+function chipObj(aid, id, cls, pre){ const o = objeto(aid, id); return `<span class="${cls}">${pre}<span class="chip-ico">${iconoObj(aid, o)}</span>${esc(o.nombre)}</span>`; }
 function abrirMochila(){
   const aid = state.juegoAid, r = recorrer(aid, J()[aid]), its = Array.from(r.inv);
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
-  v.innerHTML = `<div class="hoja" role="dialog" aria-label="Tu mochila"><div class="hoja-h"><span style="font-size:30px">🎒</span><h2>Tu mochila</h2><button class="ico-btn" data-cerrar aria-label="Cerrar">✕</button></div>
+  v.innerHTML = `<div class="hoja" role="dialog" aria-label="Tu mochila"><div class="hoja-h"><img src="img/marca/mochila.webp" alt="" class="obj-img" data-emo="🎒" style="width:42px;height:42px;object-fit:contain"><h2>Tu mochila</h2><button class="ico-btn" data-cerrar aria-label="Cerrar">✕</button></div>
     ${its.length ? its.map(id => { const o = objeto(aid, id); return `<div class="card obj"><span class="oe">${iconoObj(aid, o)}</span><div><h3>${esc(o.nombre)}</h3><p>${esc(o.descripcion || '')}</p></div></div>`; }).join('')
       : `<p class="muted" style="text-align:center;margin:20px 0">Tu mochila está vacía.<br>¡Busca cosas útiles por el camino!</p>`}
     <p class="muted" style="font-size:13px;margin:8px 0 0">Lo que llevas puede abrir caminos nuevos… o salvarte de un desastre.</p></div>`;
@@ -977,7 +982,7 @@ function renderJuego(){
   if(!a || !j){ goScreen('inicio'); return; }
   const moch = tieneMochila(aid), r = moch ? recorrer(aid, j) : null;
   let h = `<div class="topbar"><button class="ico-btn" data-acc="salir" aria-label="Volver">${icoAtras}</button>
-    <h1>${esc(a.titulo)}</h1>${moch ? `<button class="ico-btn moch ${state.mochPop ? 'pop' : ''}" data-acc="mochila" aria-label="Mochila">🎒<b>${r.inv.size}</b></button>` : ''}<button class="ico-btn" data-acc="mapa" aria-label="Mapa">${icoMapa}</button></div><div class="rollo">`;
+    <h1>${esc(a.titulo)}</h1>${moch ? `<button class="ico-btn moch ${state.mochPop ? 'pop' : ''}" data-acc="mochila" aria-label="Mochila"><img src="img/marca/mochila.webp" alt="" class="obj-img" data-emo="🎒" style="width:30px;height:30px;object-fit:contain"><b>${r.inv.size}</b></button>` : ''}<button class="ico-btn" data-acc="mapa" aria-label="Mapa">${icoMapa}</button></div><div class="rollo">`;
   state.mochPop = false;
   j.camino.forEach((num, i) => {
     const e = E[num], ult = i === j.camino.length - 1;
@@ -998,7 +1003,7 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
   if(ev && (ev.gana.length || ev.gasta.length || ev.falta.length)) h += `<div class="mov">` +
     ev.falta.map(x => chipObj(aid, x, 'falta', 'Te faltaba: ')).join('') +
     ev.gasta.map(x => chipObj(aid, x, 'gasta', 'Entregas: ')).join('') +
-    ev.gana.map(x => chipObj(aid, x, 'gana', '🎒 + ')).join('') + `</div>`;
+    ev.gana.map(x => chipObj(aid, x, 'gana', '+ ')).join('') + `</div>`;
   if(!fin){
     if(e.dato) h += `<details class="sabias"><summary><img src="${chewieSrc('oliendo')}" alt="" class="kit-img">Chewie sabe algo…</summary>
       <div class="chewie" style="margin-top:6px"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>¿Sabías que…?</b> ${esc(e.dato)}</div></div></details>`;
@@ -1007,7 +1012,7 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
     const ks = ['a', 'b'].concat(e.opcion_c && (el === 'c' || (inv && activa && cumple(inv, e.requiere_c))) ? ['c'] : []).filter(k => e['opcion_' + k]);
     h += `<div class="ops">` + ks.map(k => {
       const cls = (el ? (el === k ? 'elegida' : 'descartada') : '') + (k === 'c' ? ' op-c' : '');
-      return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k === 'c' ? '🎒' : k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
+      return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k === 'c' ? '<img src="img/marca/mochila.webp" alt="" class="obj-img" data-emo="🎒" style="width:22px;height:22px;object-fit:contain">' : k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
     }).join('') + `</div>`;
     if(activa && J()[aid].camino.length > 1) h += `<div style="margin-top:12px;text-align:center"><button class="btn chico" data-acc="deshacer">↩ Me arrepiento</button></div>`;
   } else {
@@ -1155,7 +1160,7 @@ function renderDatos(){
     const objs = Object.values(state.objetos[a.id] || {});
     if(objs.length){
       const enc = objetosEncontrados(a.id), n2 = objs.filter(o => enc.has(norm(o.id))).length;
-      h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>🎒 Objetos · ${esc(a.titulo)}</strong><span>Lo que has llevado en la mochila</span></span>
+      h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>Objetos · ${esc(a.titulo)}</strong><span>Lo que has llevado en la mochila</span></span>
         <span class="pl-n">${n2}<small>/${objs.length}</small></span><span class="chev" aria-hidden="true">▾</span></summary><div class="pl-body">` +
         objs.map(o => enc.has(norm(o.id))
           ? `<div class="card obj"><span class="oe">${iconoObj(a.id, o)}</span><div><h3>${esc(o.nombre)}</h3><p>${esc(o.dato || o.descripcion || '')}</p></div></div>`
