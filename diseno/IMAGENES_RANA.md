@@ -7,6 +7,7 @@
 ## Prompt base (adjunta `ui-kit.png` y una imagen de los Metales)
 
 > Ilustraciones para un libro infantil de "elige tu propia aventura". Mismo estilo EXACTO que las imágenes adjuntas: trazo negro hecho a mano, colores suaves, personajes adorables y graciosos. Sin texto.
+> Personajes: usa las referencias adjuntas de Gina, papá y la abuela si las tienes. Lola y Diana son primas pequeñas de Gina: en el sueño son renacuajos/ranitas, Lola con un lacito y Diana con dos coletitas.
 > Historia: Gina (niña de 8 años, pelo rubio largo y alborotado) sueña que es un renacuajo que se convierte en rana. Durante el sueño, Gina ES el renacuajo/la rana: dibújala como un renacuajo (o rana) adorable con su mechón de pelo rubio alborotado para que se la reconozca.
 > Ambientación: una charca de agua dulce en España, con plantas acuáticas, nenúfares, juncos y barro en el fondo.
 > Rigor científico: rana común (verde con manchas). Metamorfosis en orden: huevos en masas gelatinosas → renacuajo con cola → patas traseras → patas delanteras → la cola se acorta → ranita. Animales reales de charca: ninfa de libélula, escarabajo buceador, garza, culebra de agua, peces.
@@ -15,14 +16,14 @@
 
 | Fichero | Escena |
 |---|---|
-| `rana_portada.webp` → `img/aventuras/` | Gina (niña) tumbada junto a una charca de jardín, durmiendo con una sonrisa; en el agua, renacuajos y una rana; Chewie mirando. |
-| `rana_01.webp` | Bajo el agua de una charca: un renacuajo adorable con un mechón de pelo rubio alborotado (es Gina) acaba de salir de un huevo gelatinoso; alrededor, muchos huevos y renacuajos. |
+| `rana_portada.webp` → `img/aventuras/` | Papá (adulto, en cuclillas) enseñando a Gina (niña) los huevos de rana de una charca de jardín; Gina tumbada en la hierba, a punto de dormirse; en el agua, renacuajos; Chewie mirando. |
+| `rana_01.webp` | Bajo el agua de una charca: un renacuajo adorable con un mechón de pelo rubio alborotado (es Gina) acaba de salir de un huevo gelatinoso; a su lado, otros dos renacuajos amigos (Lola, el más chiquitito con un lacito, y Diana, con dos coletitas); alrededor, muchos huevos y renacuajos. |
 | `rana_02.webp` | Gracioso: un pez escupiendo al renacuajo-Gina, que sale disparado con cara de susto. «¡PTUÉ!» |
-| `rana_03.webp` | El renacuajo-Gina junto a piedras cubiertas de algas verdes; arriba, sobre el agua, un mosquito. |
+| `rana_03.webp` | El renacuajo-Gina junto a piedras cubiertas de algas verdes; Diana-renacuajo ya rascando algas; arriba, sobre el agua, un mosquito. |
 | `rana_04.webp` | Gracioso: el renacuajo-Gina flotando panza arriba con cara tonta; el mosquito riéndose encima. |
 | `rana_05.webp` | Fondo de la charca: una ninfa de libélula (bicho marrón alargado con mandíbulas raras) acercándose despacio al renacuajo-Gina. |
 | `rana_06.webp` | Gracioso: la mandíbula de la ninfa de libélula disparada como un brazo extensible; el renacuajo escapando por los pelos. |
-| `rana_07.webp` | El renacuajo-Gina escondido entre plantas acuáticas, sorprendido: le han salido dos patitas traseras. |
+| `rana_07.webp` | El renacuajo-Gina y Diana entre plantas acuáticas, sorprendidas: les han salido dos patitas traseras; Lola (el lacito) detrás, aún sin patas, resoplando. |
 | `rana_08.webp` | En la orilla, una garza quieta como una estatua con el pico apuntando al agua; abajo, el renacuajo-Gina pequeñito. |
 | `rana_09.webp` | Fondo de la charca: un pez gordito simpático y un escarabajo buceador brillante que mira al renacuajo-Gina. |
 | `rana_10.webp` | El renacuajo-Gina con cuatro patas y la cola más corta, junto al pez, que la mira boquiabierto. |
@@ -37,10 +38,10 @@
 | `rana_19.webp` | Charca grande del bosque de noche: varias ranas macho croando con los sacos de la boca inflados; la ranita-Gina mirando. |
 | `rana_20.webp` | Invierno: la charca fría con escarcha en la orilla; la ranita-Gina temblando; el fondo de barro. |
 | `rana_21.webp` | Gracioso: la ranita-Gina dando un salto enorme y aterrizando en la cabeza de un pato sorprendido; la culebra abajo. |
-| `rana_22.webp` | Gracioso: la ranita-Gina con los mofletes hinchados soltando un «pío» diminuto; las demás ranas muertas de risa. |
-| `rana_23.webp` | Final feliz: primavera; la charca llena de huevos nuevos; Gina (niña) despertando en el jardín junto a la charca; una rana le guiña un ojo. |
+| `rana_22.webp` | Gracioso: la ranita-Gina con los mofletes hinchados soltando un «pío» diminuto; las demás ranas muertas de risa; entre ellas, dos ranitas pequeñas con lacito y coletitas (Lola y Diana). |
+| `rana_23.webp` | Final feliz: primavera; la charca llena de huevos nuevos; Gina (niña) despertando en el jardín; a su lado, la abuela Ester (abuela artista, con caballete y pinceles) le enseña su cuadro de la charca: una ranita con mechón rubio. |
 | `rana_24.webp` | Gracioso: la ranita-Gina congelada, tiesa como un polo, cubierta de escarcha en la orilla. |
-| `rana_25.webp` | Final feliz: la ranita-Gina cazando mosquitos con la lengua, otras ranas aplaudiendo; Gina (niña) despierta en el jardín sin picaduras. |
+| `rana_25.webp` | Final feliz: la ranita-Gina cazando mosquitos con la lengua, otras ranas aplaudiendo; Gina (niña) despierta en el jardín sin picaduras; papá a su lado lleno de ronchas rojas, rascándose con cara de fastidio. |
 
 ## Iconos de «Tu cuerpo» (otra imagen aparte)
 
