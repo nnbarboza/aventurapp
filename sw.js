@@ -4,7 +4,7 @@
  * Nunca cachea el backend de Apps Script.
  * Al subir una versión: cambiar CACHE aquí y APP_VERSION en index.html a la vez.
  */
-const CACHE = 'aventurapp-v0.11.0';
+const CACHE = 'aventurapp-v0.12.0';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
 

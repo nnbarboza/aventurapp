@@ -83,6 +83,15 @@ h1,h2,h3{font-family:var(--fd);margin:0;line-height:1.1}
 .chewie .bur::before{content:"";position:absolute;left:-8px;top:18px;width:12px;height:12px;background:#fff;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg)}
 .chewie .bur b{font-family:var(--fd);font-weight:600;color:var(--ocre)}
 .sabias summary img{width:30px;height:30px;object-fit:contain}
+.ilus-wrap{position:relative}
+.hot{position:absolute;right:6px;bottom:4px;width:62px;height:62px;border:0;padding:0;background:none;z-index:2}
+.hot img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(2px 2px 0 rgba(255,255,255,.9))}
+.hot .ex{position:absolute;top:-4px;left:-2px;width:24px;height:24px;border-radius:50%;background:var(--ocre);color:#fff;border:2px solid #fff;font-family:var(--fd);font-weight:700;font-size:15px;line-height:20px;text-align:center;animation:llama 1.6s ease-in-out infinite}
+.hot.leido .ex{background:var(--mint);color:var(--ink);animation:none}
+.hot:not(.leido) img{animation:asoma 2.4s ease-in-out infinite}
+@keyframes llama{0%,100%{transform:scale(1) rotate(0)}15%{transform:scale(1.25) rotate(-12deg)}30%{transform:scale(1) rotate(10deg)}45%{transform:scale(1.15) rotate(0)}}
+@keyframes asoma{0%,70%,100%{transform:translateY(0)}80%{transform:translateY(-6px) rotate(-6deg)}90%{transform:translateY(0) rotate(4deg)}}
+.chewie.secreto{animation:pop .35s ease-out}
 /* quién eres */
 .quien{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,180px));justify-content:center;gap:14px;margin-top:8px}
 .u{padding:14px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:var(--fd);font-weight:700;font-size:22px;background:var(--paper)}
@@ -367,12 +376,12 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.11.0';
+const APP_VERSION = '0.12.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
 const LS = { datos:'avp_datos_v3', partidas:'avp_partidas_v1', cola:'avp_cola_v1', juegos:'avp_juegos_v2', user:'avp_user',
-             invitados:'avp_invitados_v1', vista:'avp_vista_v1', quizzes:'avp_quizzes_v1', medallas:'avp_medallas_vistas_v1' };
+             invitados:'avp_invitados_v1', vista:'avp_vista_v1', quizzes:'avp_quizzes_v1', medallas:'avp_medallas_vistas_v1', secretos:'avp_secretos_v1' };
 const INK = '#2B211B', OC = '#D9653B';
 
 /* ---------- utilidades ---------- */
@@ -667,7 +676,7 @@ const state = {
   config: {}, aventuras: [], escenas: {},   // escenas[aid][num] = escena
   partidas: leer(LS.partidas, []),          // [{id, ts, aventura_id, recorrido:'1-2-5', final}]
   juegosTodos: leer(LS.juegos, {}),        // por usuario y aventura: {gina:{paleolitico:{camino:[1,2], elecciones:['a']}}}
-  usuarios: [], user: leer(LS.user, ''), objetos: {}, mochPop: false, invitados: leer(LS.invitados, []), pronto: [],
+  usuarios: [], user: leer(LS.user, ''), objetos: {}, mochPop: false, secretos: leer(LS.secretos, {}), invitados: leer(LS.invitados, []), pronto: [],
   quiz: [], quizzes: leer(LS.quizzes, []), datosFiltro: 'todas', invForm: null, qz: null, vista: leer(LS.vista, { cat:'historia', modo:'tarjetas' }),
   juegoAid: null, mapaAid: null, mapaVolver: 'inicio', screen: 'inicio', ultimoNuevo: 0
 };
@@ -710,6 +719,20 @@ const esFinal = (e) => e && (e.tipo === 'fin' || e.tipo === 'final');
 function finalesDe(aid){ return Object.values(escenasDe(aid)).filter(esFinal).sort((a, b) => a.num - b.num); }
 function partidasDe(aid){ return state.partidas.filter(p => p.aventura_id === aid && norm(p.jugadora) === state.user); }
 function descubiertos(aid){ const m = {}; partidasDe(aid).forEach(p => { m[p.final] = (m[p.final] || 0) + 1; }); return m; }
+/* Secretos de Chewie: un dato cuenta como descubierto solo si lo abres (o si es el «Dato real» de un final al que llegaste). */
+function secretosDe(aid){
+  const s = new Set(((state.secretos[state.user] || {})[aid] || []).map(Number));
+  const E = escenasDe(aid);
+  partidasDe(aid).forEach(p => { const e = E[Number(p.final)]; if(e && e.dato) s.add(e.num); });
+  return s;
+}
+function leerSecreto(aid, num){
+  const u = state.secretos[state.user] = state.secretos[state.user] || {}, l = u[aid] = u[aid] || [];
+  if(l.indexOf(num) >= 0) return false;
+  l.push(num); guardar(LS.secretos, state.secretos);
+  const cola = leer(LS.cola, []); cola.push({ action:'saveSecreto', payload:{ jugadora:state.user, aventura_id:aid, num:num, ts:new Date().toISOString() } });
+  guardar(LS.cola, cola); flush(); return true;
+}
 function objetosEncontrados(aid){
   const s = new Set();
   partidasDe(aid).forEach(p => lista(p.objetos).forEach(x => s.add(x)));
@@ -757,13 +780,19 @@ function iconoObj(aid, o){
   return `<img src="img/objetos/${esc(f)}" alt="" class="obj-img" data-emo="${esc(o.emoji || '🎒')}">`;
 }
 function chipObj(aid, id, cls, pre){ const o = objeto(aid, id); return `<span class="${cls}">${pre}<span class="chip-ico">${iconoObj(aid, o)}</span>${esc(o.nombre)}</span>`; }
+function mochilaInfo(aid){
+  const a = aventura(aid) || {}, propio = !!String(a.mochila || '').trim();
+  return { nombre: propio ? String(a.mochila).trim() : 'Tu mochila', emoji: a.mochila_emoji || '🎒',
+           src: propio ? `img/objetos/${aid}_mochila.webp` : 'img/marca/mochila.webp' };
+}
+function icoMochila(aid, px){ const m = mochilaInfo(aid); return `<img src="${m.src}" alt="" class="obj-img" data-emo="${esc(m.emoji)}" style="width:${px}px;height:${px}px;object-fit:contain">`; }
 function abrirMochila(){
-  const aid = state.juegoAid, r = recorrer(aid, J()[aid]), its = Array.from(r.inv);
+  const aid = state.juegoAid, r = recorrer(aid, J()[aid]), its = Array.from(r.inv), m = mochilaInfo(aid);
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
-  v.innerHTML = `<div class="hoja" role="dialog" aria-label="Tu mochila"><div class="hoja-h"><img src="img/marca/mochila.webp" alt="" class="obj-img" data-emo="🎒" style="width:42px;height:42px;object-fit:contain"><h2>Tu mochila</h2><button class="ico-btn" data-cerrar aria-label="Cerrar">✕</button></div>
+  v.innerHTML = `<div class="hoja" role="dialog" aria-label="${esc(m.nombre)}"><div class="hoja-h">${icoMochila(aid, 42)}<h2>${esc(m.nombre)}</h2><button class="ico-btn" data-cerrar aria-label="Cerrar">✕</button></div>
     ${its.length ? its.map(id => { const o = objeto(aid, id); return `<div class="card obj"><span class="oe">${iconoObj(aid, o)}</span><div><h3>${esc(o.nombre)}</h3><p>${esc(o.descripcion || '')}</p></div></div>`; }).join('')
-      : `<p class="muted" style="text-align:center;margin:20px 0">Tu mochila está vacía.<br>¡Busca cosas útiles por el camino!</p>`}
-    <p class="muted" style="font-size:13px;margin:8px 0 0">Lo que llevas puede abrir caminos nuevos… o salvarte de un desastre.</p></div>`;
+      : `<p class="muted" style="text-align:center;margin:20px 0">Todavía no hay nada aquí.<br>¡Sigue adelante!</p>`}
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Lo que tienes puede abrir caminos nuevos… o salvarte de un desastre.</p></div>`;
   document.body.appendChild(v);
   v.addEventListener('click', e => { if(e.target === v || e.target.closest('[data-cerrar]')) v.remove(); });
 }
@@ -914,8 +943,8 @@ function dibujarCamino(){
 }
 function renderInicio(){
   const u = yo(), cats = catsConAventuras();
-  if(!cats.some(c => c.id === state.vista.cat)) state.vista.cat = cats.length ? cats[0].id : 'historia';
-  const cat = state.vista.cat;
+  /* Si la categoría guardada aún no tiene aventuras (p. ej. antes de cargar el Sheet), se muestra la primera sin olvidar la elegida. */
+  const cat = cats.some(c => c.id === state.vista.cat) ? state.vista.cat : (cats.length ? cats[0].id : 'historia');
   const avs = state.aventuras.filter(a => a.categoria === cat), pronto = state.pronto.filter(a => a.categoria === cat);
   const conLinea = avs.concat(pronto).length > 1 && avs.concat(pronto).every(a => Number(a.hace) > 0);
   const modo = conLinea ? state.vista.modo : 'tarjetas';
@@ -982,7 +1011,7 @@ function renderJuego(){
   if(!a || !j){ goScreen('inicio'); return; }
   const moch = tieneMochila(aid), r = moch ? recorrer(aid, j) : null;
   let h = `<div class="topbar"><button class="ico-btn" data-acc="salir" aria-label="Volver">${icoAtras}</button>
-    <h1>${esc(a.titulo)}</h1>${moch ? `<button class="ico-btn moch ${state.mochPop ? 'pop' : ''}" data-acc="mochila" aria-label="Mochila"><img src="img/marca/mochila.webp" alt="" class="obj-img" data-emo="🎒" style="width:30px;height:30px;object-fit:contain"><b>${r.inv.size}</b></button>` : ''}<button class="ico-btn" data-acc="mapa" aria-label="Mapa">${icoMapa}</button></div><div class="rollo">`;
+    <h1>${esc(a.titulo)}</h1>${moch ? `<button class="ico-btn moch ${state.mochPop ? 'pop' : ''}" data-acc="mochila" aria-label="${esc(mochilaInfo(aid).nombre)}">${icoMochila(aid, 30)}<b>${r.inv.size}</b></button>` : ''}<button class="ico-btn" data-acc="mapa" aria-label="Mapa">${icoMapa}</button></div><div class="rollo">`;
   state.mochPop = false;
   j.camino.forEach((num, i) => {
     const e = E[num], ult = i === j.camino.length - 1;
@@ -998,21 +1027,20 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
   const fin = esFinal(e), feliz = e.tipo === 'final';
   let h = `<article class="pan ${fin ? (feliz ? 'final' : 'fin') : ''} ${nuevo ? 'nuevo' : ''}">
     <div class="pan-h"><span class="num">${e.num}</span><h2>${esc(e.titulo)}</h2>${e.sonido ? `<span class="sonido" aria-hidden="true">${esc(e.sonido)}</span>` : ''}</div>
-    ${ilusEscena(aid, e)}
+    <div class="ilus-wrap">${ilusEscena(aid, e)}${!fin && e.dato ? `<button class="hot ${secretosDe(aid).has(e.num) ? 'leido' : ''}" data-chewie="${e.num}" aria-label="Chewie sabe algo"><img src="${chewieSrc('oliendo')}" alt="" class="kit-img"><span class="ex">${secretosDe(aid).has(e.num) ? '✓' : '!'}</span></button>` : ''}</div>
     <p class="txt">${esc(e.texto)}</p>`;
   if(ev && (ev.gana.length || ev.gasta.length || ev.falta.length)) h += `<div class="mov">` +
     ev.falta.map(x => chipObj(aid, x, 'falta', 'Te faltaba: ')).join('') +
     ev.gasta.map(x => chipObj(aid, x, 'gasta', 'Entregas: ')).join('') +
     ev.gana.map(x => chipObj(aid, x, 'gana', '+ ')).join('') + `</div>`;
   if(!fin){
-    if(e.dato) h += `<details class="sabias"><summary><img src="${chewieSrc('oliendo')}" alt="" class="kit-img">Chewie sabe algo…</summary>
-      <div class="chewie" style="margin-top:6px"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>¿Sabías que…?</b> ${esc(e.dato)}</div></div></details>`;
+    if(e.dato) h += `<div class="chewie-slot" data-slot="${e.num}"></div>`;
     const el = elegida ? elegida[0] : null;
     /* La opción C solo existe si llevas lo que pide (o si ya la elegiste en este camino). */
     const ks = ['a', 'b'].concat(e.opcion_c && (el === 'c' || (inv && activa && cumple(inv, e.requiere_c))) ? ['c'] : []).filter(k => e['opcion_' + k]);
     h += `<div class="ops">` + ks.map(k => {
       const cls = (el ? (el === k ? 'elegida' : 'descartada') : '') + (k === 'c' ? ' op-c' : '');
-      return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k === 'c' ? '<img src="img/marca/mochila.webp" alt="" class="obj-img" data-emo="🎒" style="width:22px;height:22px;object-fit:contain">' : k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
+      return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k === 'c' ? icoMochila(aid, 22) : k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
     }).join('') + `</div>`;
     if(activa && J()[aid].camino.length > 1) h += `<div style="margin-top:12px;text-align:center"><button class="btn chico" data-acc="deshacer">↩ Me arrepiento</button></div>`;
   } else {
@@ -1031,6 +1059,17 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
 }
 $('#s-juego').addEventListener('click', e => {
   const op = e.target.closest('[data-op]'); if(op) return elegir(op.dataset.op);
+  const ch = e.target.closest('[data-chewie]');
+  if(ch){
+    const aid = state.juegoAid, num = Number(ch.dataset.chewie), ev = escenasDe(aid)[num], pan = ch.closest('.pan'), slot = pan && pan.querySelector('[data-slot="' + num + '"]');
+    if(!ev || !slot) return;
+    if(slot.innerHTML){ slot.innerHTML = ''; return; }
+    const nuevo = leerSecreto(aid, num);
+    slot.innerHTML = `<div class="chewie secreto"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>${nuevo ? '¡Secreto nuevo!' : '¿Sabías que…?'}</b> ${esc(ev.dato)}</div></div>`;
+    ch.classList.add('leido'); ch.querySelector('.ex').textContent = '✓';
+    if(nuevo){ const s = secretosDe(aid).size, t = Object.values(escenasDe(aid)).filter(x => x.dato).length; toast('🔑 Secretos de Chewie: ' + s + ' de ' + t); avisarMedallas(); }
+    return;
+  }
   const a = e.target.closest('[data-acc]'); if(!a) return;
   const acc = a.dataset.acc, aid = state.juegoAid;
   if(acc === 'salir') goScreen('inicio');
@@ -1120,13 +1159,13 @@ function statsDe(avs){
   avs.forEach(a => {
     const objs = Object.keys(state.objetos[a.id] || {}), enc = objetosEncontrados(a.id);
     s.objT += objs.length; s.obj += objs.filter(x => enc.has(x)).length;
-    const ps = partidasDe(a.id), desc = descubiertos(a.id), vis = visitadas(a.id), E = Object.values(escenasDe(a.id));
+    const ps = partidasDe(a.id), desc = descubiertos(a.id), vis = visitadas(a.id), sec = secretosDe(a.id), E = Object.values(escenasDe(a.id));
     if(ps.length) s.jugadas++;
     s.partidas += ps.length;
     E.forEach(e => {
       if(e.tipo === 'final'){ s.felicesT++; if(desc[e.num]) s.felices++; }
       if(e.tipo === 'fin'){ s.fatalesT++; if(desc[e.num]) s.fatales++; }
-      if(e.dato){ s.datosT++; if(vis.has(e.num)) s.datos++; }
+      if(e.dato){ s.datosT++; if(sec.has(e.num)) s.datos++; }
       s.escT++; if(vis.has(e.num)) s.vis++;
     });
   });
@@ -1135,32 +1174,32 @@ function statsDe(avs){
 function renderDatos(){
   const f = state.datosFiltro, avs = f === 'todas' ? state.aventuras : state.aventuras.filter(a => a.id === f);
   const s = statsDe(avs), pct = s.escT ? Math.round(s.vis * 100 / s.escT) : 0;
-  let h = `<h1 style="font-size:28px;margin:6px 0 4px">Cuaderno de datos</h1><p class="muted" style="margin:0 0 12px">Cada escena que visitas te regala un dato real de la historia.</p>
+  let h = `<h1 style="font-size:28px;margin:6px 0 4px">Cuaderno de datos</h1><p class="muted" style="margin:0 0 12px">Toca a Chewie cuando asome en una escena: te contará un secreto de verdad.</p>
     <div class="chips" role="tablist"><button class="chip ${f === 'todas' ? 'on' : ''}" data-f="todas">Todas</button>${state.aventuras.map(a => `<button class="chip ${f === a.id ? 'on' : ''}" data-f="${esc(a.id)}">${esc(a.titulo)}</button>`).join('')}</div>
     <div class="stats">
       ${f === 'todas' ? `<div class="card st"><img src="img/marca/stats/aventuras.webp" alt=""><b>${s.jugadas}<small>/${s.total}</small></b><span>aventuras jugadas</span></div>` : ''}
       <div class="card st"><img src="img/marca/stats/partidas.webp" alt=""><b>${s.partidas}</b><span>partidas</span></div>
       <div class="card st"><img src="img/marca/stats/felices.webp" alt=""><b>${s.felices}<small>/${s.felicesT}</small></b><span>finales felices</span></div>
       <div class="card st"><img src="img/marca/stats/desastre.webp" alt=""><b>${s.fatales}<small>/${s.fatalesT}</small></b><span>finales desastre</span></div>
-      <div class="card st"><img src="img/marca/stats/datos.webp" alt=""><b>${s.datos}<small>/${s.datosT}</small></b><span>datos descubiertos</span></div>
+      <div class="card st"><img src="img/marca/stats/secretos.webp" alt=""><b>${s.datos}<small>/${s.datosT}</small></b><span>secretos de Chewie</span></div>
       <div class="card st"><img src="img/marca/stats/mapa.webp" alt=""><b>${pct}<small>%</small></b><span>mapa explorado</span></div>
       ${s.objT ? `<div class="card st"><img src="img/marca/stats/objetos.webp" alt=""><b>${s.obj}<small>/${s.objT}</small></b><span>objetos encontrados</span></div>` : ''}
     </div>`;
   avs.forEach(a => {
-    const vis = visitadas(a.id);
+    const vis = secretosDe(a.id);
     const conDato = Object.values(escenasDe(a.id)).filter(e => e.dato).sort((x, y) => x.num - y.num);
     const n = conDato.filter(e => vis.has(e.num)).length;
-    h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>${esc(a.titulo)}</strong><span>Datos descubiertos</span></span>
+    h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>${esc(a.titulo)}</strong><span>Secretos de Chewie</span></span>
       <span class="pl-n">${n}<small>/${conDato.length}</small></span><span class="chev" aria-hidden="true">▾</span></summary><div class="pl-body">`;
     conDato.forEach(e => {
       if(vis.has(e.num)) h += `<div class="card dt"><span class="num">${e.num}</span><div><h3>${esc(e.titulo)}</h3><p>${esc(e.dato)}</p></div></div>`;
-      else h += `<div class="card dt oculto"><span class="num">?</span><div><h3>Dato escondido</h3><p>Sigue explorando para descubrirlo.</p></div></div>`;
+      else h += `<div class="card dt oculto"><span class="num">?</span><div><h3>Secreto escondido</h3><p>Busca a Chewie en las escenas y tócalo.</p></div></div>`;
     });
     h += `</div></details>`;
     const objs = Object.values(state.objetos[a.id] || {});
     if(objs.length){
       const enc = objetosEncontrados(a.id), n2 = objs.filter(o => enc.has(norm(o.id))).length;
-      h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>Objetos · ${esc(a.titulo)}</strong><span>Lo que has llevado en la mochila</span></span>
+      h += `<details class="card plegable" ${f !== 'todas' ? 'open' : ''}><summary><span class="pl-t"><strong>${esc(mochilaInfo(a.id).nombre)} · ${esc(a.titulo)}</strong><span>Lo que has ido consiguiendo</span></span>
         <span class="pl-n">${n2}<small>/${objs.length}</small></span><span class="chev" aria-hidden="true">▾</span></summary><div class="pl-body">` +
         objs.map(o => enc.has(norm(o.id))
           ? `<div class="card obj"><span class="oe">${iconoObj(a.id, o)}</span><div><h3>${esc(o.nombre)}</h3><p>${esc(o.dato || o.descripcion || '')}</p></div></div>`
@@ -1190,9 +1229,11 @@ function medallas(){
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id), E = Object.keys(escenasDe(a.id)), vis = visitadas(a.id);
     m.push({ id:'todos_' + a.id, img:'trofeo', titulo:'Todos los finales', desc:a.titulo, ok: fins.length > 0 && fins.every(f => desc[f.num]) });
+    const conD = Object.values(escenasDe(a.id)).filter(e => e.dato), sec = secretosDe(a.id);
+    m.push({ id:'secretos_' + a.id, img:'libro', titulo:'Todos los secretos', desc:a.titulo, ok: conD.length > 0 && conD.every(e => sec.has(e.num)) });
     m.push({ id:'mapa_' + a.id, img:({ paleolitico:'montana', neolitico:'hoja' })[a.id] || 'mundo', titulo:'Mapa completo', desc:a.titulo, ok: E.length > 0 && E.every(n => vis.has(Number(n))) });
     if(tieneMochila(a.id)){ const objs = Object.keys(state.objetos[a.id]), enc = objetosEncontrados(a.id);
-      m.push({ id:'objetos_' + a.id, img:'huella', titulo:'Mochila completa', desc:a.titulo, ok: objs.every(x => enc.has(x)) }); }
+      m.push({ id:'objetos_' + a.id, img:'huella', titulo:mochilaInfo(a.id).nombre + ' completo', desc:a.titulo, ok: objs.every(x => enc.has(x)) }); }
   });
   return m;
 }
@@ -1471,6 +1512,11 @@ async function bootstrap(){
       const ids = new Set(state.partidas.map(p => p.id));
       d.partidas.forEach(p => { if(p && p.id && !ids.has(p.id)) state.partidas.push(Object.assign({}, p, { final:Number(p.final) })); });
       guardar(LS.partidas, state.partidas);
+    }
+    if(d && Array.isArray(d.secretos)){
+      d.secretos.forEach(r => { const u = norm(r.jugadora), aid = String(r.aventura_id || '').trim(), n = Number(r.num); if(!u || !aid || !n) return;
+        const l = ((state.secretos[u] = state.secretos[u] || {})[aid] = state.secretos[u][aid] || []); if(l.indexOf(n) < 0) l.push(n); });
+      guardar(LS.secretos, state.secretos);
     }
     if(d && Array.isArray(d.quizzes)){
       const ids = new Set(state.quizzes.map(q => q.id));
