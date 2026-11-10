@@ -358,16 +358,21 @@ function _completarV13() {
 
 /* ---------- v0.14: voz de Chewie con Google Cloud Text-to-Speech ----------
    La clave va en Configuración del proyecto › Propiedades del script › TTS_KEY (nunca en este código: el repo es público). */
-const VOZ_CHEWIE = { name: '', pitch: 8, speakingRate: 1.1 };   // name: la voz elegida en probarVoces()
+const VOZ_CHEWIE = {
+  name: 'Algieba', languageCode: 'es-419', model: 'gemini-3.1-flash-tts-preview', speakingRate: 1,
+  prompt: 'Read aloud in a warm, welcoming and playful tone, like a curious little hamster telling a secret to a child.'
+};
 
 function _tts(texto, voz) {
   const key = PropertiesService.getScriptProperties().getProperty('TTS_KEY');
   if (!key) throw new Error('Falta TTS_KEY en Propiedades del script.');
-  const audioConfig = { audioEncoding: 'MP3', speakingRate: voz.speakingRate };
-  if (!/Chirp|Journey/i.test(voz.name)) audioConfig.pitch = voz.pitch;   // esas voces no admiten tono
+  const audioConfig = { audioEncoding: 'MP3', speakingRate: voz.speakingRate || 1 };
+  if (voz.pitch != null && !voz.model && !/Chirp|Journey/i.test(voz.name)) audioConfig.pitch = voz.pitch;   // esas voces no admiten tono
+  const input = { text: texto }; if (voz.prompt) input.prompt = voz.prompt;
+  const voice = { languageCode: voz.languageCode || voz.name.split('-').slice(0, 2).join('-'), name: voz.name }; if (voz.model) voice.modelName = voz.model;
   const r = UrlFetchApp.fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + encodeURIComponent(key), {
     method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-    payload: JSON.stringify({ input: { text: texto }, voice: { languageCode: voz.name.split('-').slice(0, 2).join('-'), name: voz.name }, audioConfig: audioConfig }) });
+    payload: JSON.stringify({ input: input, voice: voice, audioConfig: audioConfig }) });
   const j = JSON.parse(r.getContentText());
   if (!j.audioContent) throw new Error('Google TTS: ' + r.getContentText().slice(0, 300));
   return Utilities.base64Decode(j.audioContent);
@@ -397,6 +402,13 @@ function probarVoces() {
   Logger.log('✅ ' + n + ' muestras. Escúchalas aquí: ' + f.getUrl());
 }
 
+/** 1b) Una sola prueba con la voz elegida (VOZ_CHEWIE) antes de generarlas todas. */
+function probarChewie() {
+  const f = _carpeta('AventurApp voces');
+  const file = f.createFile(Utilities.newBlob(_tts('¡Psst! ¿Sabías que a los renacuajos les salen primero las patas traseras? Las delanteras salen después… ¡y la cola desaparece poco a poco!', VOZ_CHEWIE), 'audio/mpeg', 'prueba Chewie.mp3'));
+  Logger.log('✅ Escúchala: ' + file.getUrl());
+}
+
 /** 2) Genera un MP3 por cada secreto de Chewie en Drive › AventurApp voces › audio. Salta los que ya existen;
     si se corta por tiempo, vuelve a ejecutarlo. Para rehacer uno, borra su archivo. */
 function generarVoces() {
@@ -407,7 +419,7 @@ function generarVoces() {
     file: e.aventura_id + '_' + String(e.num).padStart(2, '0') + '.mp3', dato: String(e.dato).trim() })).filter(e => !hay[e.file]);
   let n = 0;
   for (const e of pend) {
-    if (Date.now() - t0 > 270000) break;
+    if (Date.now() - t0 > 300000) break;
     dir.createFile(Utilities.newBlob(_tts(e.dato, VOZ_CHEWIE), 'audio/mpeg', e.file)); n++;
   }
   Logger.log((n === pend.length ? '✅ Listo: ' : '⏳ Faltan ' + (pend.length - n) + ', ejecútalo otra vez. Hechos: ') + n + '. Carpeta: ' + dir.getUrl());
