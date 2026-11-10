@@ -8,7 +8,7 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.12.2';
+const VERSION = '0.14.0';
 
 const HEADERS = {
   Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo'],
@@ -354,6 +354,63 @@ function _completarV13() {
   };
   sync('Aventuras', 'id', null, (v, H) => String(v[H.indexOf('id')]) === 'rana' ? RANA_AVENTURA : null, ['intro']);
   sync('Escenas', 'aventura_id', null, (v, H) => String(v[H.indexOf('aventura_id')]) === 'rana' ? RANA_ESCENAS.find(e => e.num === Number(v[H.indexOf('num')])) : null, ['titulo', 'texto']);
+}
+
+/* ---------- v0.14: voz de Chewie con Google Cloud Text-to-Speech ----------
+   La clave va en Configuración del proyecto › Propiedades del script › TTS_KEY (nunca en este código: el repo es público). */
+const VOZ_CHEWIE = { name: '', pitch: 8, speakingRate: 1.1 };   // name: la voz elegida en probarVoces()
+
+function _tts(texto, voz) {
+  const key = PropertiesService.getScriptProperties().getProperty('TTS_KEY');
+  if (!key) throw new Error('Falta TTS_KEY en Propiedades del script.');
+  const audioConfig = { audioEncoding: 'MP3', speakingRate: voz.speakingRate };
+  if (!/Chirp|Journey/i.test(voz.name)) audioConfig.pitch = voz.pitch;   // esas voces no admiten tono
+  const r = UrlFetchApp.fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + encodeURIComponent(key), {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    payload: JSON.stringify({ input: { text: texto }, voice: { languageCode: voz.name.split('-').slice(0, 2).join('-'), name: voz.name }, audioConfig: audioConfig }) });
+  const j = JSON.parse(r.getContentText());
+  if (!j.audioContent) throw new Error('Google TTS: ' + r.getContentText().slice(0, 300));
+  return Utilities.base64Decode(j.audioContent);
+}
+function _carpeta(nombre, padre) {
+  const it = padre ? padre.getFoldersByName(nombre) : DriveApp.getFoldersByName(nombre);
+  return it.hasNext() ? it.next() : (padre ? padre.createFolder(nombre) : DriveApp.createFolder(nombre));
+}
+
+/** 1) Genera muestras con las voces en español disponibles (normal y aguda) en Drive › AventurApp voces › pruebas. */
+function probarVoces() {
+  const key = PropertiesService.getScriptProperties().getProperty('TTS_KEY');
+  const r = JSON.parse(UrlFetchApp.fetch('https://texttospeech.googleapis.com/v1/voices?languageCode=es&key=' + encodeURIComponent(key), { muteHttpExceptions: true }).getContentText());
+  if (!r.voices) throw new Error(JSON.stringify(r).slice(0, 300));
+  const voces = r.voices.map(v => v.name).filter(n => /^es-(ES|US)-(Neural2|Wavenet|Studio|Chirp3-HD)/.test(n)).sort();
+  const f = _carpeta('pruebas ' + Utilities.formatDate(new Date(), 'Europe/Madrid', 'dd-MM HH.mm'), _carpeta('AventurApp voces'));
+  const texto = '¡Psst! A los renacuajos les salen primero las patas traseras. Las delanteras salen después… ¡y la cola desaparece poco a poco!';
+  let n = 0;
+  voces.forEach(name => {
+    const chirp = /Chirp/.test(name);
+    (chirp ? [0] : [0, 8]).forEach(pitch => {
+      if (n >= 40) return;
+      try { f.createFile(Utilities.newBlob(_tts(texto, { name: name, pitch: pitch, speakingRate: 1.1 }), 'audio/mpeg', name + (pitch ? ' aguda' : '') + '.mp3')); n++; }
+      catch (e) { Logger.log('✗ ' + name + ': ' + e.message); }
+    });
+  });
+  Logger.log('✅ ' + n + ' muestras. Escúchalas aquí: ' + f.getUrl());
+}
+
+/** 2) Genera un MP3 por cada secreto de Chewie en Drive › AventurApp voces › audio. Salta los que ya existen;
+    si se corta por tiempo, vuelve a ejecutarlo. Para rehacer uno, borra su archivo. */
+function generarVoces() {
+  if (!VOZ_CHEWIE.name) throw new Error('Primero elige una voz en VOZ_CHEWIE.name');
+  const t0 = Date.now(), dir = _carpeta('audio', _carpeta('AventurApp voces'));
+  const hay = {}; const it = dir.getFiles(); while (it.hasNext()) hay[it.next().getName()] = true;
+  const pend = _readSheet('Escenas').filter(e => String(e.dato || '').trim()).map(e => ({
+    file: e.aventura_id + '_' + String(e.num).padStart(2, '0') + '.mp3', dato: String(e.dato).trim() })).filter(e => !hay[e.file]);
+  let n = 0;
+  for (const e of pend) {
+    if (Date.now() - t0 > 270000) break;
+    dir.createFile(Utilities.newBlob(_tts(e.dato, VOZ_CHEWIE), 'audio/mpeg', e.file)); n++;
+  }
+  Logger.log((n === pend.length ? '✅ Listo: ' : '⏳ Faltan ' + (pend.length - n) + ', ejecútalo otra vez. Hechos: ') + n + '. Carpeta: ' + dir.getUrl());
 }
 
 /** Revisa que cada aventura se pueda jugar: destinos que existen, decisiones con 2 opciones,

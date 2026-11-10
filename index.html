@@ -377,7 +377,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.13.0';
+const APP_VERSION = '0.14.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -392,23 +392,13 @@ function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&
 function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function leer(k, def){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
 function guardar(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
-/* Voz de Chewie: voz del sistema (en iPhone, «Flo» de México), aguda y rápida como un hámster. */
-const VOZ = { pitch: 1.5, rate: 1.15 };
-function vozChewie(){
-  const S = window.speechSynthesis; if(!S) return null;
-  const vs = S.getVoices().filter(v => /^es/i.test(v.lang));
-  return vs.find(v => /flo/i.test(v.name) && /MX/i.test(v.lang)) || vs.find(v => /flo/i.test(v.name)) || vs.find(v => /MX/i.test(v.lang)) || vs[0] || null;
+/* Voz de Chewie: MP3 generados con Google Text-to-Speech (audio/<aventura>_<NN>.mp3). Si no existe, silencio. */
+let vozAudio = null;
+function chewieHabla(aid, num){
+  chewieCalla();
+  try{ vozAudio = new Audio('audio/' + aid + '_' + String(num).padStart(2, '0') + '.mp3'); vozAudio.play().catch(() => {}); }catch(_){}
 }
-function chewieHabla(txt){
-  const S = window.speechSynthesis; if(!S || !txt) return;
-  S.cancel();
-  const u = new SpeechSynthesisUtterance(txt), v = vozChewie();
-  if(v){ u.voice = v; u.lang = v.lang; } else u.lang = 'es-MX';
-  u.pitch = VOZ.pitch; u.rate = VOZ.rate;
-  S.speak(u);
-}
-function chewieCalla(){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(_){} }
-if(window.speechSynthesis){ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = () => {}; }
+function chewieCalla(){ try{ if(vozAudio){ vozAudio.pause(); vozAudio = null; } }catch(_){} }
 function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 2400); }
 function truthy(v){ return v === true || /^(true|si|sí|1|x|verdadero)$/i.test(String(v == null ? '' : v).trim()); }
 
@@ -1078,7 +1068,7 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
 }
 $('#s-juego').addEventListener('click', e => {
   const op = e.target.closest('[data-op]'); if(op) return elegir(op.dataset.op);
-  const vz = e.target.closest('[data-voz]'); if(vz){ const ev = escenasDe(state.juegoAid)[Number(vz.dataset.voz)]; if(ev) chewieHabla(ev.dato); return; }
+  const vz = e.target.closest('[data-voz]'); if(vz){ const ev = escenasDe(state.juegoAid)[Number(vz.dataset.voz)]; if(ev) chewieHabla(state.juegoAid, ev.num); return; }
   const ch = e.target.closest('[data-chewie]');
   if(ch){
     const aid = state.juegoAid, num = Number(ch.dataset.chewie), ev = escenasDe(aid)[num], pan = ch.closest('.pan'), slot = pan && pan.querySelector('[data-slot="' + num + '"]');
@@ -1086,7 +1076,7 @@ $('#s-juego').addEventListener('click', e => {
     if(slot.innerHTML){ slot.innerHTML = ''; chewieCalla(); return; }
     const nuevo = leerSecreto(aid, num);
     slot.innerHTML = `<div class="chewie secreto"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>${nuevo ? '¡Secreto nuevo!' : '¿Sabías que…?'}</b> ${esc(ev.dato)}<button class="voz" data-voz="${num}" aria-label="Escuchar otra vez">🔊</button></div></div>`;
-    chewieHabla(ev.dato);
+    chewieHabla(aid, num);
     ch.classList.add('leido'); ch.querySelector('.ex').textContent = '✓';
     if(nuevo){ const s = secretosDe(aid).size, t = Object.values(escenasDe(aid)).filter(x => x.dato).length; toast('🔑 Secretos de Chewie: ' + s + ' de ' + t); avisarMedallas(); }
     return;
