@@ -364,14 +364,17 @@ const VOZ_CHEWIE = {
 };
 
 function _tts(texto, voz) {
-  const key = PropertiesService.getScriptProperties().getProperty('TTS_KEY');
-  if (!key) throw new Error('Falta TTS_KEY en Propiedades del script.');
+  const props = PropertiesService.getScriptProperties(), key = props.getProperty('TTS_KEY');
+  // Las voces Gemini no aceptan clave de API: van con tu propia sesión de Google (permiso cloud-platform) y tu proyecto.
+  const oauth = !!voz.model, proyecto = props.getProperty('GCP_PROJECT') || '21070261983';
+  if (!oauth && !key) throw new Error('Falta TTS_KEY en Propiedades del script.');
   const audioConfig = { audioEncoding: 'MP3', speakingRate: voz.speakingRate || 1 };
   if (voz.pitch != null && !voz.model && !/Chirp|Journey/i.test(voz.name)) audioConfig.pitch = voz.pitch;   // esas voces no admiten tono
   const input = { text: texto }; if (voz.prompt) input.prompt = voz.prompt;
   const voice = { languageCode: voz.languageCode || voz.name.split('-').slice(0, 2).join('-'), name: voz.name }; if (voz.model) voice.modelName = voz.model;
-  const r = UrlFetchApp.fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + encodeURIComponent(key), {
+  const r = UrlFetchApp.fetch('https://texttospeech.googleapis.com/v1/text:synthesize' + (oauth ? '' : '?key=' + encodeURIComponent(key)), {
     method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: oauth ? { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'x-goog-user-project': proyecto } : {},
     payload: JSON.stringify({ input: input, voice: voice, audioConfig: audioConfig }) });
   const j = JSON.parse(r.getContentText());
   if (!j.audioContent) throw new Error('Google TTS: ' + r.getContentText().slice(0, 300));
