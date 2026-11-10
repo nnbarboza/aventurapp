@@ -92,6 +92,7 @@ h1,h2,h3{font-family:var(--fd);margin:0;line-height:1.1}
 @keyframes llama{0%,100%{transform:scale(1) rotate(0)}15%{transform:scale(1.25) rotate(-12deg)}30%{transform:scale(1) rotate(10deg)}45%{transform:scale(1.15) rotate(0)}}
 @keyframes asoma{0%,70%,100%{transform:translateY(0)}80%{transform:translateY(-6px) rotate(-6deg)}90%{transform:translateY(0) rotate(4deg)}}
 .chewie.secreto{animation:pop .35s ease-out}
+.bur .voz{display:inline-block;margin-left:6px;border:0;background:var(--mint);border-radius:50%;width:30px;height:30px;font-size:15px;line-height:30px;padding:0;vertical-align:middle}
 /* quién eres */
 .quien{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,180px));justify-content:center;gap:14px;margin-top:8px}
 .u{padding:14px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:var(--fd);font-weight:700;font-size:22px;background:var(--paper)}
@@ -376,7 +377,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.12.0';
+const APP_VERSION = '0.13.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -391,6 +392,23 @@ function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&
 function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function leer(k, def){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
 function guardar(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+/* Voz de Chewie: voz del sistema (en iPhone, «Flo» de México), aguda y rápida como un hámster. */
+const VOZ = { pitch: 1.5, rate: 1.15 };
+function vozChewie(){
+  const S = window.speechSynthesis; if(!S) return null;
+  const vs = S.getVoices().filter(v => /^es/i.test(v.lang));
+  return vs.find(v => /flo/i.test(v.name) && /MX/i.test(v.lang)) || vs.find(v => /flo/i.test(v.name)) || vs.find(v => /MX/i.test(v.lang)) || vs[0] || null;
+}
+function chewieHabla(txt){
+  const S = window.speechSynthesis; if(!S || !txt) return;
+  S.cancel();
+  const u = new SpeechSynthesisUtterance(txt), v = vozChewie();
+  if(v){ u.voice = v; u.lang = v.lang; } else u.lang = 'es-MX';
+  u.pitch = VOZ.pitch; u.rate = VOZ.rate;
+  S.speak(u);
+}
+function chewieCalla(){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(_){} }
+if(window.speechSynthesis){ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = () => {}; }
 function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 2400); }
 function truthy(v){ return v === true || /^(true|si|sí|1|x|verdadero)$/i.test(String(v == null ? '' : v).trim()); }
 
@@ -803,6 +821,7 @@ function inicio(aid){ const e = escenasDe(aid); return e[1] ? 1 : Math.min.apply
    NAVEGACIÓN
    ============================================================ */
 function goScreen(s){
+  chewieCalla();
   state.screen = s;
   $$('.screen').forEach(el => el.classList.toggle('active', el.id === 's-' + s));
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
@@ -1059,13 +1078,15 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
 }
 $('#s-juego').addEventListener('click', e => {
   const op = e.target.closest('[data-op]'); if(op) return elegir(op.dataset.op);
+  const vz = e.target.closest('[data-voz]'); if(vz){ const ev = escenasDe(state.juegoAid)[Number(vz.dataset.voz)]; if(ev) chewieHabla(ev.dato); return; }
   const ch = e.target.closest('[data-chewie]');
   if(ch){
     const aid = state.juegoAid, num = Number(ch.dataset.chewie), ev = escenasDe(aid)[num], pan = ch.closest('.pan'), slot = pan && pan.querySelector('[data-slot="' + num + '"]');
     if(!ev || !slot) return;
-    if(slot.innerHTML){ slot.innerHTML = ''; return; }
+    if(slot.innerHTML){ slot.innerHTML = ''; chewieCalla(); return; }
     const nuevo = leerSecreto(aid, num);
-    slot.innerHTML = `<div class="chewie secreto"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>${nuevo ? '¡Secreto nuevo!' : '¿Sabías que…?'}</b> ${esc(ev.dato)}</div></div>`;
+    slot.innerHTML = `<div class="chewie secreto"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>${nuevo ? '¡Secreto nuevo!' : '¿Sabías que…?'}</b> ${esc(ev.dato)}<button class="voz" data-voz="${num}" aria-label="Escuchar otra vez">🔊</button></div></div>`;
+    chewieHabla(ev.dato);
     ch.classList.add('leido'); ch.querySelector('.ex').textContent = '✓';
     if(nuevo){ const s = secretosDe(aid).size, t = Object.values(escenasDe(aid)).filter(x => x.dato).length; toast('🔑 Secretos de Chewie: ' + s + ' de ' + t); avisarMedallas(); }
     return;
@@ -1080,6 +1101,7 @@ $('#s-juego').addEventListener('click', e => {
   if(acc === 'mochila') abrirMochila();
 });
 function elegir(k){
+  chewieCalla();
   const aid = state.juegoAid, j = J()[aid], E = escenasDe(aid);
   const e = E[j.camino[j.camino.length - 1]];
   if(!e) return;
