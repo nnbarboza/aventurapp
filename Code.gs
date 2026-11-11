@@ -360,7 +360,7 @@ function _completarV13() {
    La clave va en Configuración del proyecto › Propiedades del script › TTS_KEY (nunca en este código: el repo es público). */
 const VOZ_CHEWIE = {
   name: 'Algieba', languageCode: 'es-419', model: 'gemini-3.1-flash-tts-preview', speakingRate: 1,
-  prompt: 'Read aloud in a warm, welcoming and playful tone, like a curious little hamster telling a secret to a child.'
+  prompt: 'Read aloud in a warm, welcoming and playful tone, like a curious little male hamster.'
 };
 
 function _tts(texto, voz) {
