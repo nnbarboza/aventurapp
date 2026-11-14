@@ -84,8 +84,8 @@ h1,h2,h3{font-family:var(--fd);margin:0;line-height:1.1}
 .chewie .bur b{font-family:var(--fd);font-weight:600;color:var(--ocre)}
 .sabias summary img{width:30px;height:30px;object-fit:contain}
 .ilus-wrap{position:relative}
-.hot{position:absolute;right:6px;bottom:4px;width:62px;height:62px;border:0;padding:0;background:none;z-index:2}
-.hot img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(2px 2px 0 rgba(255,255,255,.9))}
+.hot{position:absolute;right:6px;bottom:2px;width:100px;height:68px;border:0;padding:0;background:none;z-index:2}
+.hot img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(2px 2px 0 rgba(255,255,255,.9))}
 .hot .ex{position:absolute;top:-4px;left:-2px;width:24px;height:24px;border-radius:50%;background:var(--ocre);color:#fff;border:2px solid #fff;font-family:var(--fd);font-weight:700;font-size:15px;line-height:20px;text-align:center;animation:llama 1.6s ease-in-out infinite}
 .hot.leido .ex{background:var(--mint);color:var(--ink);animation:none}
 .hot:not(.leido) img{animation:asoma 2.4s ease-in-out infinite}
@@ -377,7 +377,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.14.0';
+const APP_VERSION = '0.15.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -590,6 +590,8 @@ function kitSrc(kit, nombre){
   return { src: KIT_COMUN.indexOf(d) >= 0 ? `img/kit/comun/${d}/${n}.webp` : `img/kit/${kit}/${d}/${n}.webp`, dir:d, n:n };
 }
 const chewieSrc = (pose) => `img/kit/comun/chewie/${pose}.webp`;
+/* Chewie disfrazado según la aventura (img/kit/comun/chewie/<aventura>_<pose>.webp); si no existe, el normal. */
+const chewieAv = (pose, aid) => `<img src="img/kit/comun/chewie/${aid}_${pose}.webp" data-fb="${chewieSrc(pose)}" alt="" class="kit-img">`;
 function kitImg(src, alto, cls){
   return `<img class="kit-img ${cls || ''}" src="${esc(src)}" alt="" style="--h:${Math.round(alto * 100)}%">`;
 }
@@ -630,6 +632,7 @@ function ilus(kit, o, carpeta){
 document.addEventListener('error', function(e){
   const im = e.target;
   if(!im || !im.classList) return;
+  if(im.dataset && im.dataset.fb && im.getAttribute('src') !== im.dataset.fb){ im.src = im.dataset.fb; return; }
   if(im.classList.contains('kit-img')){ im.remove(); return; }
   if(im.classList.contains('obj-img')){ const s = document.createElement('span'); s.textContent = im.dataset.emo || '🎒'; im.replaceWith(s); return; }
   if(!im.classList.contains('ilus-img')) return;
@@ -1036,7 +1039,7 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
   const fin = esFinal(e), feliz = e.tipo === 'final';
   let h = `<article class="pan ${fin ? (feliz ? 'final' : 'fin') : ''} ${nuevo ? 'nuevo' : ''}">
     <div class="pan-h"><span class="num">${e.num}</span><h2>${esc(e.titulo)}</h2>${e.sonido ? `<span class="sonido" aria-hidden="true">${esc(e.sonido)}</span>` : ''}</div>
-    <div class="ilus-wrap">${ilusEscena(aid, e)}${!fin && e.dato ? `<button class="hot ${secretosDe(aid).has(e.num) ? 'leido' : ''}" data-chewie="${e.num}" aria-label="Chewie sabe algo"><img src="${chewieSrc('oliendo')}" alt="" class="kit-img"><span class="ex">${secretosDe(aid).has(e.num) ? '✓' : '!'}</span></button>` : ''}</div>
+    <div class="ilus-wrap">${ilusEscena(aid, e)}${!fin && e.dato ? `<button class="hot ${secretosDe(aid).has(e.num) ? 'leido' : ''}" data-chewie="${e.num}" aria-label="Chewie sabe algo">${chewieAv('asomando', aid)}<span class="ex">${secretosDe(aid).has(e.num) ? '✓' : '!'}</span></button>` : ''}</div>
     <p class="txt">${esc(e.texto)}</p>`;
   if(ev && (ev.gana.length || ev.gasta.length || ev.falta.length)) h += `<div class="mov">` +
     ev.falta.map(x => chipObj(aid, x, 'falta', 'Te faltaba: ')).join('') +
@@ -1075,7 +1078,7 @@ $('#s-juego').addEventListener('click', e => {
     if(!ev || !slot) return;
     if(slot.innerHTML){ slot.innerHTML = ''; chewieCalla(); return; }
     const nuevo = leerSecreto(aid, num);
-    slot.innerHTML = `<div class="chewie secreto"><img src="${chewieSrc('leyendo')}" alt="" class="kit-img"><div class="bur"><b>${nuevo ? '¡Secreto nuevo!' : '¿Sabías que…?'}</b> ${esc(ev.dato)}<button class="voz" data-voz="${num}" aria-label="Escuchar otra vez">🔊</button></div></div>`;
+    slot.innerHTML = `<div class="chewie secreto">${chewieAv('contando', aid)}<div class="bur"><b>${nuevo ? '¡Secreto nuevo!' : '¿Sabías que…?'}</b> ${esc(ev.dato)}<button class="voz" data-voz="${num}" aria-label="Escuchar otra vez">🔊</button></div></div>`;
     chewieHabla(aid, num);
     ch.classList.add('leido'); ch.querySelector('.ex').textContent = '✓';
     if(nuevo){ const s = secretosDe(aid).size, t = Object.values(escenasDe(aid)).filter(x => x.dato).length; toast('🔑 Secretos de Chewie: ' + s + ' de ' + t); avisarMedallas(); }
