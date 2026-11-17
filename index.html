@@ -197,6 +197,19 @@ nav button img{width:34px;height:34px;object-fit:contain;filter:grayscale(.85);o
 nav button.on{color:var(--ink)}
 nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .logo-img{display:block;width:min(290px,80%);height:auto;margin:4px auto 10px}
+#s-inicio .logo-img{width:min(250px,64%);margin:4px auto 12px}
+.cab{position:relative}
+.yo-top{position:absolute;top:0;right:0;border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--fd);font-size:12px;color:var(--ink)}
+.yo-top .yo-av{position:relative;display:block;width:46px;height:46px}
+.yo-top .yo-av img{width:46px;height:46px;object-fit:contain;border:2px solid var(--ink);border-radius:50%;background:var(--sun);padding:2px;display:block}
+.yo-top .yo-cambio{position:absolute;right:-5px;bottom:-3px;width:20px;height:20px;border-radius:50%;background:var(--paper);border:2px solid var(--ink);font-size:11px;line-height:16px;text-align:center}
+.invi-nota{text-align:center;margin:-4px 0 12px;font-size:14px}
+.cat-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:2.5px solid var(--ink);border-radius:16px;overflow:hidden;margin:0 0 14px;background:var(--paper);box-shadow:3px 3px 0 var(--ink)}
+.cat-tabs button{border:0;background:none;padding:8px 4px 7px;font-family:var(--fd);font-weight:700;font-size:15px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:1px}
+.cat-tabs button+button{border-left:2px solid var(--ink)}
+.cat-tabs .ce{font-size:22px;line-height:1.1}
+.cat-tabs button.on{background:var(--sun)}
+.vista-row{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px;font-family:var(--fd);font-weight:700;font-size:15px}
 nav.oculta{display:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
@@ -377,7 +390,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.15.1';
+const APP_VERSION = '0.16.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -902,7 +915,7 @@ function elegirUsuario(){ goScreen('quien'); }
    INICIO
    ============================================================ */
 function haceTxt(a){ const n = Number(a.hace); return n ? 'Hace ' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' años' : ''; }
-const CATEGORIAS = [{ id:'historia', nombre:'Historia' }, { id:'ciencia', nombre:'Ciencia' }, { id:'naturaleza', nombre:'Naturaleza' }];
+const CATEGORIAS = [{ id:'historia', nombre:'Historia', emo:'🏺' }, { id:'ciencia', nombre:'Ciencia', emo:'🔬' }, { id:'naturaleza', nombre:'Naturaleza', emo:'🌿' }];
 const icoTarjetas = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="13" width="16" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
 const icoLinea = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 V22" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/><circle cx="12" cy="5" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
 function catsConAventuras(){ return CATEGORIAS.filter(c => state.aventuras.concat(state.pronto).some(a => a.categoria === c.id)); }
@@ -960,10 +973,11 @@ function renderInicio(){
   const avs = state.aventuras.filter(a => a.categoria === cat), pronto = state.pronto.filter(a => a.categoria === cat);
   const conLinea = avs.concat(pronto).length > 1 && avs.concat(pronto).every(a => Number(a.hace) > 0);
   const modo = conLinea ? state.vista.modo : 'tarjetas';
-  let h = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
-    <div class="yo"><button id="btnYo" class="yo-av" aria-label="Cambiar de jugador"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></button><p><b>¡Hola, ${esc(u.nombre || 'exploradora')}!</b><br>${u.invitado ? 'Hoy acompañas a Gina en sus aventuras.' : 'Cada decisión cambia la historia.'}</p></div>`;
-  h += `<div class="inicio-bar">${cats.length > 1 ? `<div class="chips">${cats.map(c => `<button class="chip ${c.id === cat ? 'on' : ''}" data-cat="${c.id}">${c.nombre}</button>`).join('')}</div>` : '<span style="flex:1"></span>'}
-    ${conLinea ? `<div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div>` : ''}</div>`;
+  let h = `<div class="cab"><img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
+    <button id="btnYo" class="yo-top" aria-label="Cambiar de jugador"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
+  if(u.invitado) h += `<p class="invi-nota">Hoy acompañas a Gina en sus aventuras.</p>`;
+  if(cats.length > 1) h += `<div class="cat-tabs" role="tablist" aria-label="Categorías">${cats.map(c => `<button class="${c.id === cat ? 'on' : ''}" data-cat="${c.id}" aria-pressed="${c.id === cat}"><span class="ce">${c.emo || ''}</span>${c.nombre}</button>`).join('')}</div>`;
+  if(conLinea) h += `<div class="vista-row"><span>${modo === 'linea' ? 'Línea del tiempo' : 'Aventuras'}</span><div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div></div>`;
   if(!avs.length && !pronto.length) h += `<div class="vacio card">Todavía no hay aventuras aquí.</div>`;
   if(modo === 'linea') h += lineaDelTiempo(avs.concat(pronto).sort((a, b) => Number(b.hace) - Number(a.hace)));
   else {
