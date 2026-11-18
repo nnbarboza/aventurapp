@@ -8,7 +8,7 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.17.0';
+const VERSION = '0.18.0';
 
 const HEADERS = {
   Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo'],
@@ -197,6 +197,7 @@ function setup() {
   _completarV13();
   _completarV16();
   _completarV17();
+  _completarV18();
   Logger.log('✅ setup listo. Ahora: Implementar › Nueva implementación › Aplicación web.');
 }
 
@@ -384,6 +385,23 @@ function _completarV17() {
   };
   sync('Aventuras', (v, H) => String(v[H.indexOf('id')]) === 'reciclaje' ? RECICLAJE_AVENTURA : null, ['intro']);
   sync('Escenas', (v, H) => String(v[H.indexOf('aventura_id')]) === 'reciclaje' ? RECICLAJE_ESCENAS.find(e => e.num === Number(v[H.indexOf('num')])) : null, ['titulo', 'texto']);
+}
+
+/* ---------- v0.18: jugadoras con avatar propio (img/avatares/<usuario>.webp) ---------- */
+const USUARIOS_V18 = [
+  { username: 'gina',   nombre: 'Gina',   avatar: 'avatares/gina.webp',   color: '#F6C445', activo: true },
+  { username: 'gemma',  nombre: 'Gemma',  avatar: 'avatares/gemma.webp',  color: '#B9D98B', activo: true },
+  { username: 'guille', nombre: 'Guille', avatar: 'avatares/guille.webp', color: '#F4A7B9', activo: true },
+  { username: 'leyla',  nombre: 'Leyla',  avatar: 'avatares/leyla.webp',  color: '#C9A7EB', activo: true }
+];
+function _completarV18() {
+  const sh = _ss().getSheetByName('Usuarios'), vals = sh.getDataRange().getValues(), H = vals[0].map(String);
+  const iU = H.indexOf('username'), iA = H.indexOf('avatar');
+  USUARIOS_V18.forEach(u => {
+    const r = vals.findIndex((v, k) => k > 0 && String(v[iU]).trim().toLowerCase() === u.username);
+    if (r < 0) _append('Usuarios', u);
+    else if (iA >= 0 && String(vals[r][iA]) !== u.avatar) sh.getRange(r + 1, iA + 1).setValue(u.avatar);
+  });
 }
 
 /* ---------- v0.14: voz de Chewie con Google Cloud Text-to-Speech ----------
