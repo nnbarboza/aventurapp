@@ -217,6 +217,7 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .cat-tabs button.on{background:var(--sun)}
 .pin-hoja{text-align:center;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 .pin-av{width:72px;height:72px;object-fit:contain;border:2px solid var(--ink);border-radius:50%;background:var(--sun);display:block;margin:4px auto 8px}
+.perfil-acc{display:flex;flex-direction:column;gap:10px;max-width:290px;margin:0 auto}
 .pin-dots{display:flex;justify-content:center;gap:14px;margin:0 0 16px}
 .pin-dots i{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--ink);display:block}
 .pin-dots i.on{background:var(--ink)}
@@ -227,6 +228,7 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .pin-k.sec{font-size:16px;background:var(--bg)}
 .rk-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 12px}
 .rk-tabs button{border:2px solid var(--ink);border-radius:14px;background:var(--paper);padding:7px 2px;font-family:var(--fd);font-weight:600;font-size:13.5px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px}
+.rk-tabs button img{width:34px;height:34px;object-fit:contain}
 .rk-tabs button span{font-size:20px}
 .rk-tabs button.on{background:var(--sun);box-shadow:2px 2px 0 var(--ink)}
 .rk-tabla{padding:6px 10px}
@@ -240,6 +242,8 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .rk-val small{font-size:12px;font-weight:600;color:var(--ink2)}
 .rk-avs{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:0 14px 10px}
 .rk-av-f{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;font-size:14px;padding:6px 0;border-top:1.5px dashed var(--line, #e6dccb)}
+.rk-mini{width:18px;height:18px;object-fit:contain;vertical-align:-4px}
+.rk-av-f span{white-space:nowrap}
 .rk-av-f b{font-family:var(--fd);font-weight:600;font-size:15px}
 .vista-row{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px;font-family:var(--fd);font-weight:700;font-size:15px}
 nav.oculta{display:none}
@@ -423,7 +427,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.18.0';
+const APP_VERSION = '0.18.1';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -946,30 +950,73 @@ function entrarComo(username){
 }
 const esVerdad = v => v === true || String(v).toUpperCase() === 'TRUE';
 /* Cada jugadora fija tiene su PIN de 4 cifras (columna «pin» del Sheet). Se comprueba en el servidor: el PIN nunca llega al móvil. */
-function pedirPin(u){
-  let pin = '';
+/* Teclado de PIN reutilizable. paso(pin) devuelve un mensaje de error, o nada para cerrar. */
+function tecladoPin(u, titulo, msg0, paso){
+  let pin = '', msg = msg0, mal = false;
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
-  const pinta = (msg) => {
-    v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="PIN de ${esc(u.nombre)}">
-      <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>Hola, ${esc(u.nombre)}</h2>
-      <p class="muted" style="margin:4px 0 12px">${msg || 'Escribe tu PIN secreto'}</p>
-      <div class="pin-dots">${[0,1,2,3].map(i => `<i class="${i < pin.length ? 'on' : ''}"></i>`).join('')}</div>
+  const pinta = () => {
+    v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="${esc(titulo)}">
+      <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(titulo)}</h2>
+      <p class="muted" style="margin:4px 0 12px">${msg}</p>
+      <div class="pin-dots ${mal ? 'mal' : ''}">${[0,1,2,3].map(i => `<i class="${i < pin.length ? 'on' : ''}"></i>`).join('')}</div>
       <div class="pin-pad">${['1','2','3','4','5','6','7','8','9','x','0','<'].map(k => k === 'x' ? `<button data-pin="x" class="pin-k sec">Salir</button>` : k === '<' ? `<button data-pin="<" class="pin-k sec" aria-label="Borrar">⌫</button>` : `<button data-pin="${k}" class="pin-k">${k}</button>`).join('')}</div></div>`;
   };
   pinta(); document.body.appendChild(v);
   v.addEventListener('click', async e => {
     if(e.target === v) return v.remove();
     const k = e.target.closest('[data-pin]'); if(!k || v.dataset.ocupado) return;
-    const d = k.dataset.pin;
+    const d = k.dataset.pin; mal = false;
     if(d === 'x') return v.remove();
     if(d === '<'){ pin = pin.slice(0, -1); return pinta(); }
     if(pin.length < 4) pin += d;
     pinta();
     if(pin.length === 4){
       v.dataset.ocupado = '1';
-      try{ await api('login', { username:u.username, pin:pin }); v.remove(); entrarComo(u.username); }
-      catch(err){ delete v.dataset.ocupado; pin = ''; pinta(/fetch|network|Load failed/i.test(err.message) ? 'Necesitas internet para entrar 📶' : '¡Ese no es! Prueba otra vez'); v.querySelector('.pin-dots').classList.add('mal'); }
+      const r = await paso(pin);
+      delete v.dataset.ocupado;
+      if(!r) return v.remove();
+      if(typeof r === 'object'){ msg = r.msg; pin = ''; return pinta(); }   // siguiente paso, sin error
+      msg = r; mal = true; pin = ''; pinta();
     }
+  });
+}
+const errRed = err => /fetch|network|Load failed/i.test(err.message) ? 'Necesitas internet 📶' : '¡Ese no es! Prueba otra vez';
+function pedirPin(u){
+  tecladoPin(u, 'Hola, ' + u.nombre, 'Escribe tu PIN secreto', async pin => {
+    try{ await api('login', { username:u.username, pin:pin }); setTimeout(() => entrarComo(u.username), 0); return null; }
+    catch(err){ return errRed(err); }
+  });
+}
+function cambiarPin(u){
+  let viejo = '', nuevo = '';
+  tecladoPin(u, 'Cambiar mi PIN', 'Primero, tu PIN de ahora', async pin => {
+    if(!viejo){
+      try{ await api('login', { username:u.username, pin:pin }); viejo = pin; return { msg:'Ahora, tu PIN nuevo' }; }
+      catch(err){ return errRed(err); }
+    }
+    if(!nuevo){ nuevo = pin; return { msg:'Repite el PIN nuevo' }; }
+    if(pin !== nuevo){ nuevo = ''; return 'No coinciden. Escribe el PIN nuevo otra vez'; }
+    try{ await api('cambiarPin', { username:u.username, pin:viejo, nuevo:nuevo }); toast('🔒 ¡PIN cambiado!'); return null; }
+    catch(err){ return /fetch|network|Load failed/i.test(err.message) ? 'Necesitas internet 📶' : 'No se pudo cambiar: ' + err.message; }
+  });
+}
+function abrirPerfil(){
+  const u = yo(), fijo = state.usuarios.some(x => x.username === u.username);
+  const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
+  v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="Mi perfil">
+    <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(u.nombre || 'Yo')}</h2>
+    <p class="muted" style="margin:4px 0 16px">${fijo ? 'Este móvil es tuyo' : 'Juegas como invitado/a'}</p>
+    <div class="perfil-acc">${fijo ? `<button class="btn" data-perfil="pin">🔒 Cambiar mi PIN</button>` : ''}
+    <button class="btn" data-perfil="cambiar">⇄ Cambiar de jugador</button>
+    <button class="btn chico" data-perfil="cerrar">Cerrar</button></div></div>`;
+  document.body.appendChild(v);
+  v.addEventListener('click', e => {
+    const b = e.target.closest('[data-perfil]');
+    if(e.target === v || (b && b.dataset.perfil === 'cerrar')) return v.remove();
+    if(!b) return;
+    v.remove();
+    if(b.dataset.perfil === 'pin') cambiarPin(u);
+    if(b.dataset.perfil === 'cambiar') elegirUsuario();
   });
 }
 /* Los invitados viven en el móvil, pero se apuntan en el Sheet (pestaña Invitados) para saber quién ha jugado. */
@@ -1074,7 +1121,7 @@ $('#s-inicio').addEventListener('click', e => {
   const m = e.target.closest('[data-mapa]'); if(m) return abrirMapa(m.dataset.mapa, 'inicio');
   const q = e.target.closest('[data-quiz]'); if(q) return abrirQuiz(q.dataset.quiz, 'inicio');
   if(e.target.closest('#btnActualizar')) return forzarActualizacion();
-  if(e.target.closest('#btnYo')) return elegirUsuario();
+  if(e.target.closest('#btnYo')) return abrirPerfil();
   const c = e.target.closest('[data-cat]'); if(c){ state.vista.cat = c.dataset.cat; guardarVista(); return renderInicio(); }
   const mo = e.target.closest('[data-modo]'); if(mo){ state.vista.modo = mo.dataset.modo; guardarVista(); renderInicio(); return window.scrollTo(0, 0); }
   const st = e.target.closest('[data-lt]');
@@ -1344,7 +1391,7 @@ function renderRanking(){
   const orden = st.slice().sort((x, y) => y[tab.k] - x[tab.k] || String(x.u.nombre).localeCompare(String(y.u.nombre)));
   let pos = 0, prev = null;
   let h = `<div class="topbar"><span style="width:44px"></span><h1>Aventureros</h1><span style="width:44px"></span></div>
-    <div class="rk-tabs">${TABLAS.map(t => `<button class="${t.id === tab.id ? 'on' : ''}" data-rk="${t.id}"><span>${t.ico}</span>${t.t}</button>`).join('')}</div>
+    <div class="rk-tabs">${TABLAS.map(t => `<button class="${t.id === tab.id ? 'on' : ''}" data-rk="${t.id}"><img src="img/marca/rk_${t.id}.webp" alt="" class="obj-img" data-emo="${t.ico}">${t.t}</button>`).join('')}</div>
     <div class="card rk-tabla">`;
   orden.forEach((s, i) => {
     if(s[tab.k] !== prev){ pos = i + 1; prev = s[tab.k]; }
@@ -1358,7 +1405,7 @@ function renderRanking(){
     h += `<details class="card plegable rk-det" ${s.username === state.user ? 'open' : ''}><summary><span class="pl-t" style="display:flex;align-items:center;gap:10px"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><span><strong>${esc(s.u.nombre || s.username)}</strong><span>${pl(s.aventuras, 'aventura')} · ${pl(s.finales, 'final', 'finales')} · ${pl(s.secretos, 'secreto')}</span></span></span></summary>`;
     const jug = s.por.filter(x => x.jugada || x.quizHecho);
     h += jug.length ? `<div class="rk-avs">` + jug.map(x => `<div class="rk-av-f"><b>${esc(x.a.emoji || '')} ${esc(x.a.titulo)}</b>
-        <span>🏁 ${x.fin}/${x.finT}</span><span>🔑 ${x.sec}/${x.secT}</span><span>❓ ${x.quizHecho ? x.quiz + '/' + x.quizT : '—'}</span></div>`).join('') + `</div>`
+        <span><img src="img/marca/rk_finales.webp" alt="Finales" class="rk-mini"> ${x.fin}/${x.finT}</span><span><img src="img/marca/rk_secretos.webp" alt="Secretos" class="rk-mini"> ${x.sec}/${x.secT}</span><span><img src="img/marca/rk_quiz.webp" alt="Quiz" class="rk-mini"> ${x.quizHecho ? x.quiz + '/' + x.quizT : '—'}</span></div>`).join('') + `</div>`
       : `<p class="muted" style="margin:8px 0 4px">Todavía no ha jugado ninguna aventura.</p>`;
     h += `</details>`;
   });

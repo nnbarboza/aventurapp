@@ -8,7 +8,7 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.18.1';
+const VERSION = '0.18.2';
 
 const HEADERS = {
   Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo', 'pin'],
@@ -73,7 +73,8 @@ const HANDLERS = {
   saveInvitado:   handleSaveInvitado,
   saveSecreto:    handleSaveSecreto,
   borrarPartidas: handleBorrarPartidas,
-  login:          handleLogin
+  login:          handleLogin,
+  cambiarPin:     handleCambiarPin
 };
 function _despachar(p) {
   const h = HANDLERS[p.action];
@@ -83,13 +84,28 @@ function _despachar(p) {
 }
 
 /* ---------- handlers ---------- */
+/** El Sheet guarda 0000 como 0: se normaliza a 4 cifras. */
+function _pin(v) { const s = String(v == null ? '' : v).trim(); return /^\d{1,4}$/.test(s) ? s.padStart(4, '0') : s; }
 /** Comprueba el PIN de una jugadora (el PIN nunca se manda al móvil). Sin PIN en el Sheet, entra cualquiera. */
 function handleLogin(d) {
   const u = _readSheet('Usuarios').find(x => String(x.username).trim().toLowerCase() === String(d.username || '').trim().toLowerCase());
   if (!u) return _json({ ok: false, error: 'No existe esa jugadora' });
-  const pin = String(u.pin || '').trim();
-  if (pin && pin !== String(d.pin || '').trim()) return _json({ ok: false, error: 'PIN incorrecto' });
+  const pin = _pin(u.pin);
+  if (pin && pin !== _pin(d.pin)) return _json({ ok: false, error: 'PIN incorrecto' });
   return _json({ ok: true, data: { username: u.username } });
+}
+/** Cambia el PIN de una jugadora si el PIN actual es correcto. */
+function handleCambiarPin(d) {
+  const nuevo = String(d.nuevo || '').trim();
+  if (!/^\d{4}$/.test(nuevo)) return _json({ ok: false, error: 'El PIN tiene que tener 4 números' });
+  const sh = _ss().getSheetByName('Usuarios'), vals = sh.getDataRange().getValues(), H = vals[0].map(String);
+  const iU = H.indexOf('username'), iP = H.indexOf('pin');
+  const r = vals.findIndex((v, k) => k > 0 && String(v[iU]).trim().toLowerCase() === String(d.username || '').trim().toLowerCase());
+  if (r < 0 || iP < 0) return _json({ ok: false, error: 'No existe esa jugadora' });
+  const actual = _pin(vals[r][iP]);
+  if (actual && actual !== _pin(d.pin)) return _json({ ok: false, error: 'PIN incorrecto' });
+  sh.getRange(r + 1, iP + 1).setNumberFormat('@').setValue(nuevo);
+  return _json({ ok: true, data: { username: vals[r][iU] } });
 }
 function handleGetBootstrap() {
   return _json({ ok: true, data: {
