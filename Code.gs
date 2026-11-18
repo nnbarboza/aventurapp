@@ -8,10 +8,10 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.18.0';
+const VERSION = '0.18.1';
 
 const HEADERS = {
-  Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo'],
+  Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo', 'pin'],
   Aventuras: ['id', 'titulo', 'epoca', 'intro', 'color', 'emoji', 'dibujo', 'orden', 'activa',
               'kit', 'fondo', 'prota', 'elementos', 'imagen', 'hace', 'categoria', 'quiz_n', 'mochila', 'mochila_emoji'],
   Escenas:   ['aventura_id', 'num', 'tipo', 'titulo', 'texto', 'dato',
@@ -72,7 +72,8 @@ const HANDLERS = {
   saveQuiz:       handleSaveQuiz,
   saveInvitado:   handleSaveInvitado,
   saveSecreto:    handleSaveSecreto,
-  borrarPartidas: handleBorrarPartidas
+  borrarPartidas: handleBorrarPartidas,
+  login:          handleLogin
 };
 function _despachar(p) {
   const h = HANDLERS[p.action];
@@ -82,11 +83,19 @@ function _despachar(p) {
 }
 
 /* ---------- handlers ---------- */
+/** Comprueba el PIN de una jugadora (el PIN nunca se manda al móvil). Sin PIN en el Sheet, entra cualquiera. */
+function handleLogin(d) {
+  const u = _readSheet('Usuarios').find(x => String(x.username).trim().toLowerCase() === String(d.username || '').trim().toLowerCase());
+  if (!u) return _json({ ok: false, error: 'No existe esa jugadora' });
+  const pin = String(u.pin || '').trim();
+  if (pin && pin !== String(d.pin || '').trim()) return _json({ ok: false, error: 'PIN incorrecto' });
+  return _json({ ok: true, data: { username: u.username } });
+}
 function handleGetBootstrap() {
   return _json({ ok: true, data: {
     version:   VERSION,
     config:    _readSheet('Config'),
-    usuarios:  _readSheet('Usuarios'),
+    usuarios:  _readSheet('Usuarios').map(u => { const r = Object.assign({}, u); r.tienePin = String(u.pin || '').trim() !== ''; delete r.pin; return r; }),
     aventuras: _readSheet('Aventuras'),
     escenas:   _readSheet('Escenas'),
     partidas:  _readSheet('Partidas'),

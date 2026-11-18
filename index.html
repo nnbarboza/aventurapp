@@ -215,6 +215,32 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .cat-tabs button+button{border-left:2px solid var(--ink)}
 .cat-tabs .ce{width:34px;height:34px;object-fit:contain;font-size:22px;line-height:1.1}
 .cat-tabs button.on{background:var(--sun)}
+.pin-hoja{text-align:center;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+.pin-av{width:72px;height:72px;object-fit:contain;border:2px solid var(--ink);border-radius:50%;background:var(--sun);display:block;margin:4px auto 8px}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:0 0 16px}
+.pin-dots i{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--ink);display:block}
+.pin-dots i.on{background:var(--ink)}
+.pin-dots.mal{animation:tiembla .35s}
+@keyframes tiembla{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:290px;margin:0 auto}
+.pin-k{height:62px;border:2px solid var(--ink);border-radius:16px;background:#fff;font-family:var(--fd);font-weight:600;font-size:26px;color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.pin-k.sec{font-size:16px;background:var(--bg)}
+.rk-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 12px}
+.rk-tabs button{border:2px solid var(--ink);border-radius:14px;background:var(--paper);padding:7px 2px;font-family:var(--fd);font-weight:600;font-size:13.5px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px}
+.rk-tabs button span{font-size:20px}
+.rk-tabs button.on{background:var(--sun);box-shadow:2px 2px 0 var(--ink)}
+.rk-tabla{padding:6px 10px}
+.rk-fila{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1.5px dashed var(--line, #e6dccb)}
+.rk-fila:last-child{border-bottom:0}
+.rk-fila.yo{background:rgba(246,196,69,.25);border-radius:10px;padding-left:6px;padding-right:6px}
+.rk-pos{width:30px;text-align:center;font-family:var(--fd);font-weight:700;font-size:20px}
+.rk-av{width:42px;height:42px;object-fit:contain;border-radius:50%;border:2px solid var(--ink);background:var(--sun);flex-shrink:0}
+.rk-fila b{flex:1;font-family:var(--fd);font-weight:600;font-size:18px}
+.rk-val{font-family:var(--fd);font-weight:700;font-size:22px}
+.rk-val small{font-size:12px;font-weight:600;color:var(--ink2)}
+.rk-avs{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:0 14px 10px}
+.rk-av-f{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;font-size:14px;padding:6px 0;border-top:1.5px dashed var(--line, #e6dccb)}
+.rk-av-f b{font-family:var(--fd);font-weight:600;font-size:15px}
 .vista-row{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px;font-family:var(--fd);font-weight:700;font-size:15px}
 nav.oculta{display:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
@@ -379,6 +405,7 @@ nav.oculta{display:none}
   <section class="screen sin-nav" id="s-juego"></section>
   <section class="screen" id="s-finales"></section>
   <section class="screen" id="s-datos"></section>
+  <section class="screen" id="s-ranking"></section>
   <section class="screen sin-nav" id="s-mapa"></section>
   <section class="screen sin-nav" id="s-quiz"></section>
 </main>
@@ -387,7 +414,7 @@ nav.oculta{display:none}
   <button data-s="inicio" class="on"><img src="img/marca/nav_aventuras.webp" alt="">Aventuras</button>
   <button data-s="finales"><img src="img/marca/nav_finales.webp" alt="">Logros</button>
   <button data-s="datos"><img src="img/marca/nav_datos.webp" alt="">Datos</button>
-  <button data-s="quien"><img src="img/marca/nav_aventureros.webp" alt="">Aventureros</button>
+  <button data-s="ranking"><img src="img/marca/nav_aventureros.webp" alt="">Aventureros</button>
 </nav>
 <div class="toast" id="toast" role="status"></div>
 
@@ -396,7 +423,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.17.1';
+const APP_VERSION = '0.18.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -838,12 +865,13 @@ function goScreen(s){
   state.screen = s;
   $$('.screen').forEach(el => el.classList.toggle('active', el.id === 's-' + s));
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
-  $('#nav').classList.toggle('oculta', s === 'juego' || s === 'mapa' || s === 'quiz' || s === 'instalar' || (s === 'quien' && !state.user));
+  $('#nav').classList.toggle('oculta', s === 'juego' || s === 'mapa' || s === 'quiz' || s === 'instalar' || s === 'quien');
   if(s === 'instalar') renderInstalar();
   if(s === 'quien') renderQuien();
   if(s === 'inicio') renderInicio();
   if(s === 'finales') renderFinales();
   if(s === 'datos') renderDatos();
+  if(s === 'ranking') renderRanking();
   if(s === 'mapa') renderMapa();
   window.scrollTo(0, 0);
 }
@@ -857,9 +885,9 @@ const caraSrc = (c) => /^cara_/.test(c || '') ? `img/marca/${c}.webp` : `img/mar
 const avatarSrc = (u) => u.invitado ? caraSrc(u.cara)
   : u.avatar ? 'img/' + String(u.avatar).trim() : `img/kit/paleolitico/${u.username}/contenta.webp`;
 function renderQuien(){
-  let h = `<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
+  let h = `${state.user ? `<div style="text-align:left"><button class="btn chico" data-acc="volver">← Volver</button></div>` : ''}<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
     <h2 style="text-align:center;font-size:26px;margin:14px 0 6px">¿Quién eres?</h2>
-    <p class="muted" style="text-align:center;margin:0 0 10px">Toca tu dibujo para empezar.</p><div class="quien">`;
+    <p class="muted" style="text-align:center;margin:0 0 10px">Toca tu dibujo y escribe tu PIN.</p><div class="quien">`;
   state.usuarios.forEach(u => {
     h += `<button class="card u" data-user="${esc(u.username)}" style="background:${esc(u.color || '#FFFDF8')}">
       <img src="${esc(avatarSrc(u))}" alt="" class="kit-img">${esc(u.nombre || u.username)}</button>`;
@@ -894,6 +922,7 @@ $('#s-quien').addEventListener('click', e => {
   const c = e.target.closest('[data-cara]'); if(c){ state.invForm.cara = c.dataset.cara; return renderQuien(); }
   const a = e.target.closest('[data-acc]');
   if(a){
+    if(a.dataset.acc === 'volver'){ state.invForm = null; return goScreen('inicio'); }
     if(a.dataset.acc === 'nuevo'){ state.invForm = { nombre:'', cara:'n1' }; return renderQuien(); }
     if(a.dataset.acc === 'cancelar'){ state.invForm = null; return renderQuien(); }
     if(a.dataset.acc === 'crear'){
@@ -906,10 +935,43 @@ $('#s-quien').addEventListener('click', e => {
     return;
   }
   const b = e.target.closest('[data-user]'); if(!b) return;
-  state.user = b.dataset.user; guardar(LS.user, state.user); state.invForm = null;
+  const fijo = state.usuarios.find(u => u.username === b.dataset.user);
+  if(fijo && b.dataset.user !== state.user && fijo.tienePin !== false && String(fijo.tienePin).toUpperCase() !== 'FALSE') return pedirPin(fijo);
+  entrarComo(b.dataset.user);
+});
+function entrarComo(username){
+  state.user = username; guardar(LS.user, state.user); state.invForm = null;
   const inv = state.invitados.find(u => u.username === state.user); if(inv) registrarInvitado(inv);
   goScreen('inicio');
-});
+}
+const esVerdad = v => v === true || String(v).toUpperCase() === 'TRUE';
+/* Cada jugadora fija tiene su PIN de 4 cifras (columna «pin» del Sheet). Se comprueba en el servidor: el PIN nunca llega al móvil. */
+function pedirPin(u){
+  let pin = '';
+  const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
+  const pinta = (msg) => {
+    v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="PIN de ${esc(u.nombre)}">
+      <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>Hola, ${esc(u.nombre)}</h2>
+      <p class="muted" style="margin:4px 0 12px">${msg || 'Escribe tu PIN secreto'}</p>
+      <div class="pin-dots">${[0,1,2,3].map(i => `<i class="${i < pin.length ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="pin-pad">${['1','2','3','4','5','6','7','8','9','x','0','<'].map(k => k === 'x' ? `<button data-pin="x" class="pin-k sec">Salir</button>` : k === '<' ? `<button data-pin="<" class="pin-k sec" aria-label="Borrar">⌫</button>` : `<button data-pin="${k}" class="pin-k">${k}</button>`).join('')}</div></div>`;
+  };
+  pinta(); document.body.appendChild(v);
+  v.addEventListener('click', async e => {
+    if(e.target === v) return v.remove();
+    const k = e.target.closest('[data-pin]'); if(!k || v.dataset.ocupado) return;
+    const d = k.dataset.pin;
+    if(d === 'x') return v.remove();
+    if(d === '<'){ pin = pin.slice(0, -1); return pinta(); }
+    if(pin.length < 4) pin += d;
+    pinta();
+    if(pin.length === 4){
+      v.dataset.ocupado = '1';
+      try{ await api('login', { username:u.username, pin:pin }); v.remove(); entrarComo(u.username); }
+      catch(err){ delete v.dataset.ocupado; pin = ''; pinta(/fetch|network|Load failed/i.test(err.message) ? 'Necesitas internet para entrar 📶' : '¡Ese no es! Prueba otra vez'); v.querySelector('.pin-dots').classList.add('mal'); }
+    }
+  });
+}
 /* Los invitados viven en el móvil, pero se apuntan en el Sheet (pestaña Invitados) para saber quién ha jugado. */
 function registrarInvitado(u){
   const cola = leer(LS.cola, []);
@@ -981,7 +1043,7 @@ function renderInicio(){
   const conLinea = avs.concat(pronto).length > 1 && avs.concat(pronto).every(a => Number(a.hace) > 0);
   const modo = conLinea ? state.vista.modo : 'tarjetas';
   let h = `<div class="cab"><img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
-    <button id="btnYo" class="yo-top" aria-label="Cambiar de jugador"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
+    <button id="btnYo" class="yo-top" aria-label="Jugador"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
   if(u.invitado) h += `<p class="invi-nota">Hoy acompañas a Gina en sus aventuras.</p>`;
   if(cats.length > 1) h += `<div class="cat-tabs" role="tablist" aria-label="Categorías">${cats.map(c => `<button class="${c.id === cat ? 'on' : ''}" data-cat="${c.id}" aria-pressed="${c.id === cat}"><img class="ce obj-img" src="img/marca/cat_${c.id}.webp" alt="" data-emo="${c.emo || ''}">${c.nombre}</button>`).join('')}</div>`;
   if(conLinea) h += `<div class="vista-row"><span>${modo === 'linea' ? 'Línea del tiempo' : 'Aventuras'}</span><div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div></div>`;
@@ -1253,6 +1315,56 @@ $('#s-datos').addEventListener('click', e => { const c = e.target.closest('[data
 /* ============================================================
    MEDALLAS — se calculan, no se guardan (solo cuáles ya se avisaron)
    ============================================================ */
+/* Calcula las estadísticas de otra jugadora reutilizando las funciones de la jugadora actual. */
+function statsDe(username){
+  const yo = state.user; state.user = username;
+  try{
+    const avs = state.aventuras.filter(a => esVerdad(a.activa) || a.activa === true || String(a.activa).toLowerCase() === 'si');
+    const por = avs.map(a => {
+      const fins = finalesDe(a.id), desc = descubiertos(a.id), conD = Object.values(escenasDe(a.id)).filter(e => e.dato);
+      const q = mejorQuiz(a.id);
+      return { a:a, jugada: partidasDe(a.id).length > 0, partidas: partidasDe(a.id).length, fin: fins.filter(f => desc[f.num]).length, finT: fins.length,
+               sec: secretosDe(a.id).size, secT: conD.length, quiz: q ? q.aciertos : 0, quizT: q ? q.total : 0, quizHecho: !!q };
+    });
+    return { username, por, aventuras: por.filter(x => x.jugada).length, finales: por.reduce((s, x) => s + x.fin, 0),
+             secretos: por.reduce((s, x) => s + x.sec, 0), quiz: por.reduce((s, x) => s + x.quiz, 0) };
+  } finally { state.user = yo; }
+}
+const pl = (n, s, p) => n + ' ' + (n === 1 ? s : (p || s + 's'));
+const TABLAS = [
+  { id:'finales', t:'Finales', ico:'🏁', k:'finales', u:'finales', u1:'final' },
+  { id:'secretos', t:'Secretos', ico:'🔑', k:'secretos', u:'secretos', u1:'secreto' },
+  { id:'quiz', t:'Quiz', ico:'❓', k:'quiz', u:'aciertos', u1:'acierto' },
+  { id:'aventuras', t:'Aventuras', ico:'🗺️', k:'aventuras', u:'jugadas', u1:'jugada' }
+];
+function renderRanking(){
+  const tab = TABLAS.find(t => t.id === state.rk) || TABLAS[0];
+  const us = state.usuarios.filter(u => !u.activo || esVerdad(u.activo) || String(u.activo).toLowerCase() === 'si');
+  const st = us.map(u => Object.assign(statsDe(u.username), { u:u }));
+  const orden = st.slice().sort((x, y) => y[tab.k] - x[tab.k] || String(x.u.nombre).localeCompare(String(y.u.nombre)));
+  let pos = 0, prev = null;
+  let h = `<div class="topbar"><span style="width:44px"></span><h1>Aventureros</h1><span style="width:44px"></span></div>
+    <div class="rk-tabs">${TABLAS.map(t => `<button class="${t.id === tab.id ? 'on' : ''}" data-rk="${t.id}"><span>${t.ico}</span>${t.t}</button>`).join('')}</div>
+    <div class="card rk-tabla">`;
+  orden.forEach((s, i) => {
+    if(s[tab.k] !== prev){ pos = i + 1; prev = s[tab.k]; }
+    const medalla = s[tab.k] > 0 ? (['🥇', '🥈', '🥉'][pos - 1] || '') : '';
+    h += `<div class="rk-fila ${s.username === state.user ? 'yo' : ''}"><span class="rk-pos">${medalla || pos}</span>
+      <img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><b>${esc(s.u.nombre || s.username)}</b>
+      <span class="rk-val">${s[tab.k]}<small> ${s[tab.k] === 1 ? tab.u1 : tab.u}</small></span></div>`;
+  });
+  h += `</div><h2 class="sec-t">Cómo va cada uno</h2>`;
+  st.forEach(s => {
+    h += `<details class="card plegable rk-det" ${s.username === state.user ? 'open' : ''}><summary><span class="pl-t" style="display:flex;align-items:center;gap:10px"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><span><strong>${esc(s.u.nombre || s.username)}</strong><span>${pl(s.aventuras, 'aventura')} · ${pl(s.finales, 'final', 'finales')} · ${pl(s.secretos, 'secreto')}</span></span></span></summary>`;
+    const jug = s.por.filter(x => x.jugada || x.quizHecho);
+    h += jug.length ? `<div class="rk-avs">` + jug.map(x => `<div class="rk-av-f"><b>${esc(x.a.emoji || '')} ${esc(x.a.titulo)}</b>
+        <span>🏁 ${x.fin}/${x.finT}</span><span>🔑 ${x.sec}/${x.secT}</span><span>❓ ${x.quizHecho ? x.quiz + '/' + x.quizT : '—'}</span></div>`).join('') + `</div>`
+      : `<p class="muted" style="margin:8px 0 4px">Todavía no ha jugado ninguna aventura.</p>`;
+    h += `</details>`;
+  });
+  $('#s-ranking').innerHTML = h;
+}
+$('#s-ranking').addEventListener('click', e => { const b = e.target.closest('[data-rk]'); if(b){ state.rk = b.dataset.rk; renderRanking(); } });
 function quizzesMios(){ return state.quizzes.filter(q => norm(q.jugadora) === state.user); }
 function medallas(){
   const ps = state.partidas.filter(p => norm(p.jugadora) === state.user);
