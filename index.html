@@ -213,7 +213,7 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .cat-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:2.5px solid var(--ink);border-radius:16px;overflow:hidden;margin:0 0 14px;background:var(--paper);box-shadow:3px 3px 0 var(--ink)}
 .cat-tabs button{border:0;background:none;padding:8px 4px 7px;font-family:var(--fd);font-weight:700;font-size:15px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:1px}
 .cat-tabs button+button{border-left:2px solid var(--ink)}
-.cat-tabs .ce{font-size:22px;line-height:1.1}
+.cat-tabs .ce{width:34px;height:34px;object-fit:contain;font-size:22px;line-height:1.1}
 .cat-tabs button.on{background:var(--sun)}
 .vista-row{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px;font-family:var(--fd);font-weight:700;font-size:15px}
 nav.oculta{display:none}
@@ -396,7 +396,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.17.0';
+const APP_VERSION = '0.17.1';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -610,6 +610,7 @@ function kitSrc(kit, nombre){
 }
 const chewieSrc = (pose) => `img/kit/comun/chewie/${pose}.webp`;
 /* Chewie disfrazado según la aventura (img/kit/comun/chewie/<aventura>_<pose>.webp); si no existe, el normal. */
+const chewieV = (pose, aid) => `img/kit/comun/chewie/${aid}_${pose}.webp`;
 const chewieAv = (pose, aid) => `<img src="img/kit/comun/chewie/${aid}_${pose}.webp" data-fb="${chewieSrc(pose)}" alt="" class="kit-img">`;
 function kitImg(src, alto, cls){
   return `<img class="kit-img ${cls || ''}" src="${esc(src)}" alt="" style="--h:${Math.round(alto * 100)}%">`;
@@ -941,7 +942,7 @@ function tarjetaAventura(a){
         <span>${n} de ${fins.length} finales</span></div>
       <div class="av-acc">
         <button class="btn prim" data-jugar="${esc(a.id)}">${enCurso ? 'Seguir' : (partidasDe(a.id).length ? 'Jugar otra vez' : '¡Jugar!')}</button>
-        ${qz ? `<button class="btn sun quiz ${mejor ? 'hecho' : ''}" data-quiz="${esc(a.id)}" aria-label="Quiz de Chewie"><img src="${chewieSrc('normal')}" alt="" class="kit-img" style="width:28px;height:28px;object-fit:contain">${mejor ? mejor.aciertos + '/' + mejor.total : 'Quiz'}</button>` : ''}
+        ${qz ? `<button class="btn sun quiz ${mejor ? 'hecho' : ''}" data-quiz="${esc(a.id)}" aria-label="Quiz de Chewie"><img src="${chewieV('asomando', a.id)}" data-fb="${chewieSrc('asomando')}" alt="" class="kit-img" style="width:28px;height:28px;object-fit:contain">${mejor ? mejor.aciertos + '/' + mejor.total : 'Quiz'}</button>` : ''}
         <button class="btn" data-mapa="${esc(a.id)}" aria-label="Ver el mapa">${icoMapa}</button>
       </div>
     </div></article>`;
@@ -982,7 +983,7 @@ function renderInicio(){
   let h = `<div class="cab"><img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
     <button id="btnYo" class="yo-top" aria-label="Cambiar de jugador"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
   if(u.invitado) h += `<p class="invi-nota">Hoy acompañas a Gina en sus aventuras.</p>`;
-  if(cats.length > 1) h += `<div class="cat-tabs" role="tablist" aria-label="Categorías">${cats.map(c => `<button class="${c.id === cat ? 'on' : ''}" data-cat="${c.id}" aria-pressed="${c.id === cat}"><span class="ce">${c.emo || ''}</span>${c.nombre}</button>`).join('')}</div>`;
+  if(cats.length > 1) h += `<div class="cat-tabs" role="tablist" aria-label="Categorías">${cats.map(c => `<button class="${c.id === cat ? 'on' : ''}" data-cat="${c.id}" aria-pressed="${c.id === cat}"><img class="ce obj-img" src="img/marca/cat_${c.id}.webp" alt="" data-emo="${c.emo || ''}">${c.nombre}</button>`).join('')}</div>`;
   if(conLinea) h += `<div class="vista-row"><span>${modo === 'linea' ? 'Línea del tiempo' : 'Aventuras'}</span><div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div></div>`;
   if(!avs.length && !pronto.length) h += `<div class="vacio card">Todavía no hay aventuras aquí.</div>`;
   if(modo === 'linea') h += lineaDelTiempo(avs.concat(pronto).sort((a, b) => Number(b.hace) - Number(a.hace)));
@@ -1083,7 +1084,7 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
     const desc = descubiertos(aid), fins = finalesDe(aid);
     h += `<div class="sello">${feliz ? '¡FINAL FELIZ!' : 'FIN'}</div>`;
     if(nuevo && desc[e.num] === 1) h += `<div class="nuevo-final">⭐ ¡Final nuevo! Llevas ${fins.filter(f => desc[f.num]).length} de ${fins.length}</div>`;
-    if(e.dato) h += `<div class="chewie"><img src="${chewieSrc(feliz ? 'comiendo' : 'sentado')}" alt="" class="kit-img">
+    if(e.dato) h += `<div class="chewie"><img src="${chewieV('contando', aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img">
       <div class="bur"><b>${feliz ? '¡Lo logramos!' : '¡Ánimo! Prueba otro camino.'}</b><br><b>Dato real:</b> ${esc(e.dato)}</div></div>`;
     if(activa) h += `<div class="fin-acc">
       ${feliz ? '' : `<button class="btn sun full" data-acc="deshacer">↩ Volver a la última decisión</button>`}
@@ -1328,7 +1329,7 @@ function renderQuiz(){
   if(z.resumen){
     const m = mejorQuiz(z.aid), perfecto = m.aciertos === m.total;
     $('#s-quiz').innerHTML = `<div class="topbar"><button class="ico-btn" data-acc="salir" aria-label="Volver">${icoAtras}</button><h1>Quiz · ${esc(a ? a.titulo : '')}</h1><span style="width:44px"></span></div>
-      <div class="card qz-fin"><img src="${chewieSrc(perfecto ? 'comiendo' : 'normal')}" alt="" class="kit-img" style="width:110px;height:110px;object-fit:contain">
+      <div class="card qz-fin"><img src="${chewieV('contando', z.aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img" style="width:110px;height:110px;object-fit:contain">
       <div class="qz-res"><span class="muted">Tu mejor nota</span><p style="margin:0"><b>${m.aciertos}</b><span style="font-family:var(--fd);font-size:24px;color:var(--ink2)">/${m.total}</span></p>
       <span class="muted">${m.veces === 1 ? 'Lo has hecho 1 vez' : 'Lo has hecho ' + m.veces + ' veces'}</span></div>
       <p style="font-size:17px;margin:0 0 16px">${perfecto ? '¡Nota perfecta! Chewie te aplaude.' : '¿Quieres intentar mejorarla? Las preguntas cambian cada vez.'}</p>
@@ -1339,13 +1340,13 @@ function renderQuiz(){
     <div class="qz-prog">${z.ps.map((p, i) => `<i class="${z.res[i] === true ? 'ok' : z.res[i] === false ? 'mal' : i === z.i ? 'ya' : ''}"></i>`).join('')}</div>`;
   if(z.i >= z.ps.length){
     const ok = z.res.filter(Boolean).length, tot = z.ps.length, perfecto = ok === tot;
-    h += `<div class="card qz-fin"><img src="${chewieSrc(perfecto ? 'comiendo' : ok >= tot / 2 ? 'normal' : 'dormido')}" alt="" class="kit-img" style="width:110px;height:110px;object-fit:contain">
+    h += `<div class="card qz-fin"><img src="${chewieV('contando', z.aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img" style="width:110px;height:110px;object-fit:contain">
       <p style="margin:6px 0"><b>${ok}</b><span style="font-family:var(--fd);font-size:24px;color:var(--ink2)">/${tot}</span></p>
       <p style="font-size:17px;margin:0 0 16px">${perfecto ? '¡Perfecto! Chewie está flipando contigo.' : ok >= tot / 2 ? '¡Muy bien! Chewie dice que casi lo tienes.' : 'Chewie se ha dormido… ¡pero seguro que la próxima vas mejor!'}</p>
       <div class="fin-acc"><button class="btn prim full" data-acc="otra">Repetir para mejorar</button><button class="btn full" data-acc="salir">Volver</button></div></div>`;
   } else {
     const p = z.ps[z.i];
-    h += `<div class="chewie"><img src="${chewieSrc(z.resp === null ? 'oliendo' : z.resp ? 'comiendo' : 'sorprendido')}" alt="" class="kit-img"><div class="bur"><b>Pregunta ${z.i + 1} de ${z.ps.length}</b>${p.q.nivel ? `<span class="qz-nivel n${nivelDe(p.q)}">${['Fácil ⭐', 'Media ⭐⭐', 'Difícil ⭐⭐⭐'][nivelDe(p.q) - 1]}</span>` : ''}</div></div>
+    h += `<div class="chewie"><img src="${chewieV('contando', z.aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img"><div class="bur"><b>Pregunta ${z.i + 1} de ${z.ps.length}</b>${p.q.nivel ? `<span class="qz-nivel n${nivelDe(p.q)}">${['Fácil ⭐', 'Media ⭐⭐', 'Difícil ⭐⭐⭐'][nivelDe(p.q) - 1]}</span>` : ''}</div></div>
       <p class="qz-p">${esc(p.q.pregunta)}</p><div class="ops">` +
       p.ops.map((o, k) => {
         let cls = '';
@@ -1354,7 +1355,7 @@ function renderQuiz(){
       }).join('') + `</div>`;
     if(z.resp !== null){
       const e = escenasDe(z.aid)[Number(p.q.escena)];
-      h += `<div class="chewie" style="margin-top:14px"><img src="${chewieSrc(z.resp ? 'leyendo' : 'sorprendido')}" alt="" class="kit-img"><div class="bur"><b>${z.resp ? '¡Bien!' : '¡Casi!'}</b> ${e && e.dato ? esc(e.dato) : 'La respuesta es: ' + esc(p.q.correcta)}</div></div>
+      h += `<div class="chewie" style="margin-top:14px"><img src="${chewieV('contando', z.aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img"><div class="bur"><b>${z.resp ? '¡Bien!' : '¡Casi!'}</b> ${e && e.dato ? esc(e.dato) : 'La respuesta es: ' + esc(p.q.correcta)}</div></div>
         <button class="btn prim full" data-acc="sig">${z.i + 1 < z.ps.length ? 'Siguiente' : 'Ver resultado'}</button>`;
     }
   }
