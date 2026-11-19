@@ -59,7 +59,8 @@ h1,h2,h3{font-family:var(--fd);margin:0;line-height:1.1}
 .sellitos i.ok{border:2px solid var(--ink);background:var(--ocre)}
 .sellitos i.ok.fz{background:var(--sun)}
 .av-acc{display:flex;gap:10px}
-.av-acc .btn.prim{flex:1}
+.av-acc .btn.prim{flex:1;min-width:0;white-space:nowrap;padding:0 10px}
+.av-acc .btn{padding:0 11px}
 
 /* ---------- ilustraciones ---------- */
 .ilus{display:block;width:100%}
@@ -217,6 +218,13 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .cat-tabs button.on{background:var(--sun)}
 .pin-hoja{text-align:center;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 .pin-av{width:72px;height:72px;object-fit:contain;border:2px solid var(--ink);border-radius:50%;background:var(--sun);display:block;margin:4px auto 8px}
+.hoja-x{position:absolute;top:12px;right:12px;font-size:18px}
+.pin-hoja{position:relative}
+.pin-ok{width:100%;max-width:290px;margin:16px auto 0;display:flex}
+.pin-ok:disabled{opacity:.45}
+.intro-sec{display:flex;gap:12px;align-items:center;background:var(--paper);border:2px dashed var(--ink2);border-radius:16px;padding:10px 12px;margin:0 0 16px}
+.intro-sec img{width:46px;height:46px;object-fit:contain;flex-shrink:0}
+.intro-sec p{margin:0;font-size:15.5px;line-height:1.45}
 .perfil-acc{display:flex;flex-direction:column;gap:10px;max-width:290px;margin:0 auto}
 .pin-dots{display:flex;justify-content:center;gap:14px;margin:0 0 16px}
 .pin-dots i{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--ink);display:block}
@@ -245,7 +253,9 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .rk-mini{width:18px;height:18px;object-fit:contain;vertical-align:-4px}
 .rk-av-f span{white-space:nowrap}
 .rk-av-f b{font-family:var(--fd);font-weight:600;font-size:15px}
-.vista-row{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px;font-family:var(--fd);font-weight:700;font-size:15px}
+.vista-row{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 14px;font-family:var(--fd);font-weight:700;font-size:22px}
+.vista-row .vista-sw button{width:46px;height:42px}
+.vista-row .vista-sw svg,.vista-row .vista-sw img{width:26px;height:26px}
 nav.oculta{display:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
@@ -427,7 +437,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.18.1';
+const APP_VERSION = '0.18.2';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -951,33 +961,35 @@ function entrarComo(username){
 const esVerdad = v => v === true || String(v).toUpperCase() === 'TRUE';
 /* Cada jugadora fija tiene su PIN de 4 cifras (columna «pin» del Sheet). Se comprueba en el servidor: el PIN nunca llega al móvil. */
 /* Teclado de PIN reutilizable. paso(pin) devuelve un mensaje de error, o nada para cerrar. */
-function tecladoPin(u, titulo, msg0, paso){
-  let pin = '', msg = msg0, mal = false;
+function tecladoPin(u, titulo, msg0, paso, boton){
+  let pin = '';
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
-  const pinta = () => {
-    v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="${esc(titulo)}">
-      <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(titulo)}</h2>
-      <p class="muted" style="margin:4px 0 12px">${msg}</p>
-      <div class="pin-dots ${mal ? 'mal' : ''}">${[0,1,2,3].map(i => `<i class="${i < pin.length ? 'on' : ''}"></i>`).join('')}</div>
-      <div class="pin-pad">${['1','2','3','4','5','6','7','8','9','x','0','<'].map(k => k === 'x' ? `<button data-pin="x" class="pin-k sec">Salir</button>` : k === '<' ? `<button data-pin="<" class="pin-k sec" aria-label="Borrar">⌫</button>` : `<button data-pin="${k}" class="pin-k">${k}</button>`).join('')}</div></div>`;
-  };
-  pinta(); document.body.appendChild(v);
+  v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="${esc(titulo)}">
+    <button class="ico-btn hoja-x" data-pin="x" aria-label="Cerrar">✕</button>
+    <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(titulo)}</h2>
+    <p class="muted pin-msg" style="margin:4px 0 12px">${msg0}</p>
+    <div class="pin-dots">${[0,1,2,3].map(() => `<i></i>`).join('')}</div>
+    <div class="pin-pad">${['1','2','3','4','5','6','7','8','9','','0','<'].map(k => k === '' ? '<span></span>' : k === '<' ? `<button data-pin="<" class="pin-k sec" aria-label="Borrar">⌫</button>` : `<button data-pin="${k}" class="pin-k">${k}</button>`).join('')}</div>
+    <button class="btn prim pin-ok" data-pin="ok" disabled>${boton || 'Entrar'}</button></div>`;
+  document.body.appendChild(v);
+  const dots = v.querySelector('.pin-dots'), msgEl = v.querySelector('.pin-msg'), ok = v.querySelector('.pin-ok');
+  const pinta = () => { dots.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i < pin.length)); ok.disabled = pin.length < 4; };
+  const aviso = (m, mal) => { msgEl.textContent = m; dots.classList.remove('mal'); if(mal){ void dots.offsetWidth; dots.classList.add('mal'); } };
   v.addEventListener('click', async e => {
     if(e.target === v) return v.remove();
     const k = e.target.closest('[data-pin]'); if(!k || v.dataset.ocupado) return;
-    const d = k.dataset.pin; mal = false;
+    const d = k.dataset.pin;
     if(d === 'x') return v.remove();
     if(d === '<'){ pin = pin.slice(0, -1); return pinta(); }
-    if(pin.length < 4) pin += d;
-    pinta();
-    if(pin.length === 4){
-      v.dataset.ocupado = '1';
-      const r = await paso(pin);
-      delete v.dataset.ocupado;
-      if(!r) return v.remove();
-      if(typeof r === 'object'){ msg = r.msg; pin = ''; return pinta(); }   // siguiente paso, sin error
-      msg = r; mal = true; pin = ''; pinta();
-    }
+    if(d !== 'ok'){ if(pin.length < 4) pin += d; return pinta(); }
+    if(pin.length < 4) return;
+    v.dataset.ocupado = '1'; const txt = ok.textContent; ok.textContent = 'Comprobando…'; ok.disabled = true;
+    const r = await paso(pin);
+    delete v.dataset.ocupado; ok.textContent = txt;
+    if(!r) return v.remove();
+    pin = ''; pinta();
+    if(typeof r === 'object'){ aviso(r.msg); if(r.boton) ok.textContent = r.boton; return; }
+    aviso(r, true);
   });
 }
 const errRed = err => /fetch|network|Load failed/i.test(err.message) ? 'Necesitas internet 📶' : '¡Ese no es! Prueba otra vez';
@@ -991,24 +1003,24 @@ function cambiarPin(u){
   let viejo = '', nuevo = '';
   tecladoPin(u, 'Cambiar mi PIN', 'Primero, tu PIN de ahora', async pin => {
     if(!viejo){
-      try{ await api('login', { username:u.username, pin:pin }); viejo = pin; return { msg:'Ahora, tu PIN nuevo' }; }
+      try{ await api('login', { username:u.username, pin:pin }); viejo = pin; return { msg:'Ahora, tu PIN nuevo', boton:'Siguiente' }; }
       catch(err){ return errRed(err); }
     }
-    if(!nuevo){ nuevo = pin; return { msg:'Repite el PIN nuevo' }; }
+    if(!nuevo){ nuevo = pin; return { msg:'Repite el PIN nuevo', boton:'Guardar' }; }
     if(pin !== nuevo){ nuevo = ''; return 'No coinciden. Escribe el PIN nuevo otra vez'; }
     try{ await api('cambiarPin', { username:u.username, pin:viejo, nuevo:nuevo }); toast('🔒 ¡PIN cambiado!'); return null; }
     catch(err){ return /fetch|network|Load failed/i.test(err.message) ? 'Necesitas internet 📶' : 'No se pudo cambiar: ' + err.message; }
-  });
+  }, 'Siguiente');
 }
 function abrirPerfil(){
   const u = yo(), fijo = state.usuarios.some(x => x.username === u.username);
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
   v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="Mi perfil">
+    <button class="ico-btn hoja-x" data-perfil="cerrar" aria-label="Cerrar">✕</button>
     <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(u.nombre || 'Yo')}</h2>
     <p class="muted" style="margin:4px 0 16px">${fijo ? 'Este móvil es tuyo' : 'Juegas como invitado/a'}</p>
-    <div class="perfil-acc">${fijo ? `<button class="btn" data-perfil="pin">🔒 Cambiar mi PIN</button>` : ''}
-    <button class="btn" data-perfil="cambiar">⇄ Cambiar de jugador</button>
-    <button class="btn chico" data-perfil="cerrar">Cerrar</button></div></div>`;
+    <div class="perfil-acc">${fijo ? `<button class="btn" data-perfil="pin">Cambiar mi PIN</button>` : ''}
+    <button class="btn" data-perfil="cambiar">Cambiar de jugador</button></div></div>`;
   document.body.appendChild(v);
   v.addEventListener('click', e => {
     const b = e.target.closest('[data-perfil]');
@@ -1093,7 +1105,7 @@ function renderInicio(){
     <button id="btnYo" class="yo-top" aria-label="Jugador"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true">⇄</span></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
   if(u.invitado) h += `<p class="invi-nota">Hoy acompañas a Gina en sus aventuras.</p>`;
   if(cats.length > 1) h += `<div class="cat-tabs" role="tablist" aria-label="Categorías">${cats.map(c => `<button class="${c.id === cat ? 'on' : ''}" data-cat="${c.id}" aria-pressed="${c.id === cat}"><img class="ce obj-img" src="img/marca/cat_${c.id}.webp" alt="" data-emo="${c.emo || ''}">${c.nombre}</button>`).join('')}</div>`;
-  if(conLinea) h += `<div class="vista-row"><span>${modo === 'linea' ? 'Línea del tiempo' : 'Aventuras'}</span><div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div></div>`;
+  if(conLinea) h += `<div class="vista-row"><span>Mis aventuras</span><div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div></div>`;
   if(!avs.length && !pronto.length) h += `<div class="vacio card">Todavía no hay aventuras aquí.</div>`;
   if(modo === 'linea') h += lineaDelTiempo(avs.concat(pronto).sort((a, b) => Number(b.hace) - Number(a.hace)));
   else {
@@ -1281,9 +1293,10 @@ function confeti(){
    ============================================================ */
 function renderFinales(){
   const meds = medallas(), n = meds.filter(m => m.ok).length;
-  let h = `<h1 style="font-size:28px;margin:6px 0 4px">Medallas</h1><p class="muted" style="margin:0 0 12px">Llevas ${n} de ${meds.length}.</p>
+  let h = `<h1 style="font-size:28px;margin:6px 0 8px">Logros</h1><div class="intro-sec"><img src="img/marca/nav_finales.webp" alt="" class="obj-img" data-emo="🏆"><p>Tu vitrina de trofeos. Ganas medallas por todo lo que vas consiguiendo, y aquí se guardan los finales que descubres. ¡Cada aventura esconde muchos! ¿Los encontrarás todos?</p></div>
+    <h2 class="sec-t" style="margin-top:4px">Medallas <small class="muted">· llevas ${n} de ${meds.length}</small></h2>
     <div class="meds">${meds.map(m => `<div class="card med ${m.ok ? '' : 'no'}"><span class="m" aria-hidden="true"><img src="img/marca/medallas/${m.img}.webp" alt=""></span><b>${esc(m.titulo)}</b><span>${esc(m.desc)}</span></div>`).join('')}</div>
-    <h1 style="font-size:28px;margin:26px 0 4px">Finales</h1><p class="muted" style="margin:0 0 14px">¿Los encontrarás todos? Toca una aventura para ver los suyos.</p>`;
+    <h2 class="sec-t" style="margin-top:22px">Finales</h2>`;
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id), n = fins.filter(f => desc[f.num]).length;
     h += `<details class="card plegable"><summary><span class="pl-t"><strong>${esc(a.titulo)}</strong><span>${n === fins.length ? '¡Los tienes todos!' : 'Te faltan ' + (fins.length - n)}</span></span>
@@ -1323,7 +1336,7 @@ function statsDe(avs){
 function renderDatos(){
   const f = state.datosFiltro, avs = f === 'todas' ? state.aventuras : state.aventuras.filter(a => a.id === f);
   const s = statsDe(avs), pct = s.escT ? Math.round(s.vis * 100 / s.escT) : 0;
-  let h = `<h1 style="font-size:28px;margin:6px 0 4px">Cuaderno de datos</h1><p class="muted" style="margin:0 0 12px">Toca a Chewie cuando asome en una escena: te contará un secreto de verdad.</p>
+  let h = `<h1 style="font-size:28px;margin:6px 0 8px">Cuaderno de datos</h1><div class="intro-sec"><img src="img/marca/nav_datos.webp" alt="" class="obj-img" data-emo="📒"><p>Tu cuaderno de exploradora. Aquí se apunta todo lo que haces: las partidas, los finales buenos y los desastrosos, los secretos que te cuenta Chewie y los objetos que encuentras. Elige una aventura para ver solo esa.</p></div>
     <div class="chips" role="tablist"><button class="chip ${f === 'todas' ? 'on' : ''}" data-f="todas">Todas</button>${state.aventuras.map(a => `<button class="chip ${f === a.id ? 'on' : ''}" data-f="${esc(a.id)}">${esc(a.titulo)}</button>`).join('')}</div>
     <div class="stats">
       ${f === 'todas' ? `<div class="card st"><img src="img/marca/stats/aventuras.webp" alt=""><b>${s.jugadas}<small>/${s.total}</small></b><span>aventuras jugadas</span></div>` : ''}
@@ -1363,7 +1376,7 @@ $('#s-datos').addEventListener('click', e => { const c = e.target.closest('[data
    MEDALLAS — se calculan, no se guardan (solo cuáles ya se avisaron)
    ============================================================ */
 /* Calcula las estadísticas de otra jugadora reutilizando las funciones de la jugadora actual. */
-function statsDe(username){
+function statsJugadora(username){
   const yo = state.user; state.user = username;
   try{
     const avs = state.aventuras.filter(a => esVerdad(a.activa) || a.activa === true || String(a.activa).toLowerCase() === 'si');
@@ -1387,10 +1400,10 @@ const TABLAS = [
 function renderRanking(){
   const tab = TABLAS.find(t => t.id === state.rk) || TABLAS[0];
   const us = state.usuarios.filter(u => !u.activo || esVerdad(u.activo) || String(u.activo).toLowerCase() === 'si');
-  const st = us.map(u => Object.assign(statsDe(u.username), { u:u }));
+  const st = us.map(u => Object.assign(statsJugadora(u.username), { u:u }));
   const orden = st.slice().sort((x, y) => y[tab.k] - x[tab.k] || String(x.u.nombre).localeCompare(String(y.u.nombre)));
   let pos = 0, prev = null;
-  let h = `<div class="topbar"><span style="width:44px"></span><h1>Aventureros</h1><span style="width:44px"></span></div>
+  let h = `<h1 style="font-size:28px;margin:6px 0 8px">Aventureros</h1><div class="intro-sec"><img src="img/marca/nav_aventureros.webp" alt="" class="obj-img" data-emo="🧭"><p>Aquí ves cómo van todos los aventureros: quién ha descubierto más finales, más secretos de Chewie o más aciertos en los quiz. Toca a cada uno para ver sus aventuras.</p></div>
     <div class="rk-tabs">${TABLAS.map(t => `<button class="${t.id === tab.id ? 'on' : ''}" data-rk="${t.id}"><img src="img/marca/rk_${t.id}.webp" alt="" class="obj-img" data-emo="${t.ico}">${t.t}</button>`).join('')}</div>
     <div class="card rk-tabla">`;
   orden.forEach((s, i) => {
@@ -1402,7 +1415,7 @@ function renderRanking(){
   });
   h += `</div><h2 class="sec-t">Cómo va cada uno</h2>`;
   st.forEach(s => {
-    h += `<details class="card plegable rk-det" ${s.username === state.user ? 'open' : ''}><summary><span class="pl-t" style="display:flex;align-items:center;gap:10px"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><span><strong>${esc(s.u.nombre || s.username)}</strong><span>${pl(s.aventuras, 'aventura')} · ${pl(s.finales, 'final', 'finales')} · ${pl(s.secretos, 'secreto')}</span></span></span></summary>`;
+    h += `<details class="card plegable rk-det" ${s.username === state.user ? 'open' : ''}><summary><span class="pl-t" style="display:flex;align-items:center;gap:10px"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><span><strong>${esc(s.u.nombre || s.username)}</strong><span>${pl(s.aventuras, 'aventura')} · ${pl(s.finales, 'final', 'finales')} · ${pl(s.secretos, 'secreto')}</span></span></span><span class="chev" aria-hidden="true">▾</span></summary>`;
     const jug = s.por.filter(x => x.jugada || x.quizHecho);
     h += jug.length ? `<div class="rk-avs">` + jug.map(x => `<div class="rk-av-f"><b>${esc(x.a.emoji || '')} ${esc(x.a.titulo)}</b>
         <span><img src="img/marca/rk_finales.webp" alt="Finales" class="rk-mini"> ${x.fin}/${x.finT}</span><span><img src="img/marca/rk_secretos.webp" alt="Secretos" class="rk-mini"> ${x.sec}/${x.secT}</span><span><img src="img/marca/rk_quiz.webp" alt="Quiz" class="rk-mini"> ${x.quizHecho ? x.quiz + '/' + x.quizT : '—'}</span></div>`).join('') + `</div>`
