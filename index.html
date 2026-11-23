@@ -265,6 +265,8 @@ body.cargando .cargando-txt{display:block}
 .rk-val small{font-size:12px;font-weight:600;color:var(--ink2)}
 .rk-avs{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:0 14px 10px}
 .rk-av-f{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;font-size:14px;padding:6px 0;border-top:1.5px dashed var(--line, #e6dccb)}
+.rk-ico{width:22px;height:22px;object-fit:contain;vertical-align:-5px}
+.rk-med{width:30px;height:30px;object-fit:contain;vertical-align:middle}
 .rk-mini{width:18px;height:18px;object-fit:contain;vertical-align:-4px}
 .rk-av-f span{white-space:nowrap}
 .rk-av-f b{font-family:var(--fd);font-weight:600;font-size:15px}
@@ -453,7 +455,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.19.2';
+const APP_VERSION = '0.19.3';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -1428,7 +1430,7 @@ function renderRanking(){
     <div class="card rk-tabla">`;
   orden.forEach((s, i) => {
     if(s[tab.k] !== prev){ pos = i + 1; prev = s[tab.k]; }
-    const medalla = s[tab.k] > 0 ? (['🥇', '🥈', '🥉'][pos - 1] || '') : '';
+    const medalla = s[tab.k] > 0 && pos <= 3 ? `<img src="img/marca/podio_${pos}.webp" alt="Puesto ${pos}" class="obj-img rk-med" data-emo="${['🥇', '🥈', '🥉'][pos - 1]}">` : '';
     h += `<div class="rk-fila ${s.username === state.user ? 'yo' : ''}"><span class="rk-pos">${medalla || pos}</span>
       <img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><b>${esc(s.u.nombre || s.username)}</b>
       <span class="rk-val">${s[tab.k]}<small> ${s[tab.k] === 1 ? tab.u1 : tab.u}</small></span></div>`;
@@ -1437,7 +1439,7 @@ function renderRanking(){
   st.forEach(s => {
     h += `<details class="card plegable rk-det" ${s.username === state.user ? 'open' : ''}><summary><span class="pl-t" style="display:flex;align-items:center;gap:10px"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><span><strong>${esc(s.u.nombre || s.username)}</strong><span>${pl(s.aventuras, 'aventura')} · ${pl(s.finales, 'final', 'finales')} · ${pl(s.secretos, 'secreto')}</span></span></span><span class="chev" aria-hidden="true">▾</span></summary>`;
     const jug = s.por.filter(x => x.jugada || x.quizHecho);
-    h += jug.length ? `<div class="rk-avs">` + jug.map(x => `<div class="rk-av-f"><b>${esc(x.a.emoji || '')} ${esc(x.a.titulo)}</b>
+    h += jug.length ? `<div class="rk-avs">` + jug.map(x => `<div class="rk-av-f"><b><img src="img/aventuras/${esc(x.a.id)}_ico.webp" alt="" class="obj-img rk-ico" data-emo="${esc(x.a.emoji || '✨')}"> ${esc(x.a.titulo)}</b>
         <span><img src="img/marca/rk_finales.webp" alt="Finales" class="rk-mini"> ${x.fin}/${x.finT}</span><span><img src="img/marca/rk_secretos.webp" alt="Secretos" class="rk-mini"> ${x.sec}/${x.secT}</span><span><img src="img/marca/rk_quiz.webp" alt="Quiz" class="rk-mini"> ${x.quizHecho ? x.quiz + '/' + x.quizT : '—'}</span></div>`).join('') + `</div>`
       : `<p class="muted" style="margin:8px 0 4px">Todavía no ha jugado ninguna aventura.</p>`;
     h += `</details>`;
