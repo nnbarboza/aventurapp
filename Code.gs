@@ -8,7 +8,7 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.18.2';
+const VERSION = '0.20.0';
 
 const HEADERS = {
   Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo', 'pin'],
@@ -74,7 +74,8 @@ const HANDLERS = {
   saveSecreto:    handleSaveSecreto,
   borrarPartidas: handleBorrarPartidas,
   login:          handleLogin,
-  cambiarPin:     handleCambiarPin
+  cambiarPin:     handleCambiarPin,
+  cambiarColor:   handleCambiarColor
 };
 function _despachar(p) {
   const h = HANDLERS[p.action];
@@ -106,6 +107,18 @@ function handleCambiarPin(d) {
   if (actual && actual !== _pin(d.pin)) return _json({ ok: false, error: 'PIN incorrecto' });
   sh.getRange(r + 1, iP + 1).setNumberFormat('@').setValue(nuevo);
   return _json({ ok: true, data: { username: vals[r][iU] } });
+}
+/** Cambia el color de fondo de una jugadora (solo colores de la paleta). */
+function handleCambiarColor(d) {
+  const PALETA = ['#F6C445', '#F4A7B9', '#C9A7EB', '#9CCBE8', '#A8D8B0', '#B9D98B', '#F6A96B', '#FFFDF8'];
+  const color = String(d.color || '').toUpperCase();
+  if (PALETA.indexOf(color) < 0) return _json({ ok: false, error: 'Color no permitido' });
+  const sh = _ss().getSheetByName('Usuarios'), vals = sh.getDataRange().getValues(), H = vals[0].map(String);
+  const iU = H.indexOf('username'), iC = H.indexOf('color');
+  const r = vals.findIndex((v, k) => k > 0 && String(v[iU]).trim().toLowerCase() === String(d.username || '').trim().toLowerCase());
+  if (r < 0 || iC < 0) return _json({ ok: false, error: 'No existe esa jugadora' });
+  sh.getRange(r + 1, iC + 1).setValue(color);
+  return _json({ ok: true, data: { color: color } });
 }
 function handleGetBootstrap() {
   return _json({ ok: true, data: {

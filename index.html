@@ -240,6 +240,10 @@ body.cargando .cargando-txt{display:block}
 .ico-h{width:30px;height:30px;object-fit:contain;vertical-align:-7px;margin-right:4px}
 .ico-cor{width:16px;height:16px;object-fit:contain;vertical-align:-3px}
 .firma{text-align:center;font-size:14px;font-style:italic;color:var(--ink2);margin:26px 0 2px}
+.pal-t{font-family:var(--fd);font-weight:600;font-size:15px;margin:0 0 6px}
+.paleta{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:0 auto 18px;max-width:290px}
+.pal{width:34px;height:34px;border-radius:50%;border:2px solid var(--ink);padding:0}
+.pal.on{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--ink)}
 .perfil-acc{display:flex;flex-direction:column;gap:10px;max-width:290px;margin:0 auto}
 .pin-dots{display:flex;justify-content:center;gap:14px;margin:0 0 16px}
 .pin-dots i{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--ink);display:block}
@@ -457,7 +461,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.19.5';
+const APP_VERSION = '0.20.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -986,7 +990,7 @@ function tecladoPin(u, titulo, msg0, paso, boton){
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
   v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="${esc(titulo)}">
     <button class="ico-btn hoja-x" data-pin="x" aria-label="Cerrar">✕</button>
-    <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(titulo)}</h2>
+    <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img" ${fondoAv(u)}><h2>${esc(titulo)}</h2>
     <p class="muted pin-msg" style="margin:4px 0 12px">${msg0}</p>
     <div class="pin-dots">${[0,1,2,3].map(() => `<i></i>`).join('')}</div>
     <div class="pin-pad">${['1','2','3','4','5','6','7','8','9','','0','<'].map(k => k === '' ? '<span></span>' : k === '<' ? `<button data-pin="<" class="pin-k sec" aria-label="Borrar">⌫</button>` : `<button data-pin="${k}" class="pin-k">${k}</button>`).join('')}</div>
@@ -1033,18 +1037,31 @@ function cambiarPin(u){
   }, 'Siguiente');
 }
 const AVISO = 'Esta aplicación la han hecho Georgina y su papá. Es una web-app: se abre desde el navegador, no es una app de ninguna tienda. Es gratis y no tiene publicidad: es solo para que jueguen y aprendan Georgina y sus compis. Solo guarda el nombre de pila y el progreso del juego en una hoja privada de la familia; no pide email, teléfono, fotos ni ubicación. Para hacer los avatares no se ha usado ninguna foto de los compis: son dibujos hechos a partir de una descripción.';
+const PALETA = ['#F6C445', '#F4A7B9', '#C9A7EB', '#9CCBE8', '#A8D8B0', '#B9D98B', '#F6A96B', '#FFFDF8'];
+const fondoAv = u => u && u.color ? `style="background:${esc(u.color)}"` : '';
 function abrirPerfil(){
   const u = yo(), fijo = state.usuarios.some(x => x.username === u.username);
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
   v.innerHTML = `<div class="hoja pin-hoja" role="dialog" aria-label="Mi perfil">
     <button class="ico-btn hoja-x" data-perfil="cerrar" aria-label="Cerrar">✕</button>
-    <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(u.nombre || 'Yo')}</h2>
+    <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img" ${fondoAv(u)}><h2>${esc(u.nombre || 'Yo')}</h2>
     <p class="muted" style="margin:4px 0 16px">${fijo ? 'Este móvil es tuyo' : 'Juegas como invitado/a'}</p>
+    ${fijo ? `<p class="pal-t">Mi color</p><div class="paleta">${PALETA.map(c => `<button class="pal ${String(u.color || '').toUpperCase() === c ? 'on' : ''}" data-color="${c}" style="background:${c}" aria-label="Color ${c}"></button>`).join('')}</div>` : ''}
     <div class="perfil-acc">${fijo ? `<button class="btn" data-perfil="pin">Cambiar mi PIN</button>` : ''}
     <button class="btn" data-perfil="cambiar">Cambiar de jugador</button></div>
     <p class="aviso">${AVISO}</p></div>`;
   document.body.appendChild(v);
   v.addEventListener('click', e => {
+    const c = e.target.closest('[data-color]');
+    if(c){
+      const color = c.dataset.color, fu = state.usuarios.find(x => x.username === u.username);
+      if(fu) fu.color = color; u.color = color;
+      v.querySelectorAll('.pal').forEach(x => x.classList.toggle('on', x === c));
+      v.querySelector('.pin-av').style.background = color;
+      const cola = leer(LS.cola, []); cola.push({ action:'cambiarColor', payload:{ username:u.username, color:color } }); guardar(LS.cola, cola); flush();
+      guardar(LS.datos, Object.assign(leer(LS.datos, {}), { usuarios: state.usuarios }));
+      repintar(); return;
+    }
     const b = e.target.closest('[data-perfil]');
     if(e.target === v || (b && b.dataset.perfil === 'cerrar')) return v.remove();
     if(!b) return;
@@ -1124,7 +1141,7 @@ function renderInicio(){
   const conLinea = avs.concat(pronto).length > 1 && avs.concat(pronto).every(a => Number(a.hace) > 0);
   const modo = conLinea ? state.vista.modo : 'tarjetas';
   let h = `<div class="cab"><img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
-    <button id="btnYo" class="yo-top" aria-label="Mi perfil"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
+    <button id="btnYo" class="yo-top" aria-label="Mi perfil"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img" ${fondoAv(u)}></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
   if(u.invitado) h += `<p class="invi-nota">Hoy acompañas a Gina en sus aventuras.</p>`;
   if(cats.length > 1) h += `<div class="cat-tabs" role="tablist" aria-label="Categorías">${cats.map(c => `<button class="${c.id === cat ? 'on' : ''}" data-cat="${c.id}" aria-pressed="${c.id === cat}"><img class="ce obj-img" src="img/marca/cat_${c.id}.webp" alt="" data-emo="${c.emo || ''}">${c.nombre}</button>`).join('')}</div>`;
   h += `<p class="cargando-txt">Cargando aventuras…</p>`;
@@ -1434,7 +1451,7 @@ function renderRanking(){
     if(s[tab.k] !== prev){ pos = i + 1; prev = s[tab.k]; }
     const medalla = s[tab.k] > 0 && pos <= 3 ? `<img src="img/marca/podio_${pos}.webp" alt="Puesto ${pos}" class="obj-img rk-med" data-emo="${['🥇', '🥈', '🥉'][pos - 1]}">` : '';
     h += `<div class="rk-fila ${s.username === state.user ? 'yo' : ''}"><span class="rk-pos">${pos}</span>
-      <span class="rk-avw"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av">${medalla}</span><b>${esc(s.u.nombre || s.username)}</b>
+      <span class="rk-avw"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av" ${fondoAv(s.u)}>${medalla}</span><b>${esc(s.u.nombre || s.username)}</b>
       <span class="rk-val">${s[tab.k]}<small> ${s[tab.k] === 1 ? tab.u1 : tab.u}</small></span></div>`;
   });
   h += `</div><h2 class="sec-t">Cómo va cada uno</h2>`;
