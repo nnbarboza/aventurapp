@@ -235,6 +235,10 @@ body.cargando::before{opacity:1;animation:carga 1.1s linear infinite}
 @keyframes carga{from{background-position:-50% 0}to{background-position:150% 0}}
 .cargando-txt{display:none;text-align:center;font-size:14px;color:var(--ink2);margin:4px 0 10px}
 body.cargando .cargando-txt{display:block}
+.ico-in{width:22px;height:22px;object-fit:contain;vertical-align:-5px;margin-right:2px}
+.ico-est,.chewie .bur img.ico-est{width:14px;height:14px;object-fit:contain;vertical-align:-2px;flex-shrink:0}
+.ico-h{width:30px;height:30px;object-fit:contain;vertical-align:-7px;margin-right:4px}
+.ico-cor{width:16px;height:16px;object-fit:contain;vertical-align:-3px}
 .firma{text-align:center;font-size:14px;font-style:italic;color:var(--ink2);margin:26px 0 2px}
 .perfil-acc{display:flex;flex-direction:column;gap:10px;max-width:290px;margin:0 auto}
 .pin-dots{display:flex;justify-content:center;gap:14px;margin:0 0 16px}
@@ -449,7 +453,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.19.1';
+const APP_VERSION = '0.19.2';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -1132,7 +1136,7 @@ function renderInicio(){
     });
   }
   h += pie();
-  h += `<p class="firma">✦ App desarrollada con ❤️ por Georgina y su papá ✦</p>`;
+  h += `<p class="firma">✦ App desarrollada con <img src="img/marca/ico_corazon.webp" alt="" class="ico-cor obj-img" data-emo="❤️"> por Georgina y su papá ✦</p>`;
   $('#s-inicio').innerHTML = h;
   if(modo === 'linea') requestAnimationFrame(dibujarCamino);
 }
@@ -1187,7 +1191,7 @@ function renderJuego(){
     const e = E[num], ult = i === j.camino.length - 1;
     if(i > 0) h += `<div class="corte" aria-hidden="true"><span></span></div>`;
     if(!e){ h += `<article class="pan"><p class="txt">Esta parte de la historia todavía no existe (escena ${num}).</p>
-      <button class="btn full" data-acc="deshacer">↩ Volver atrás</button></article>`; return; }
+      <button class="btn full" data-acc="deshacer"><img src="img/marca/ico_volver.webp" alt="" class="ico-in obj-img" data-emo="↩"> Volver atrás</button></article>`; return; }
     h += panel(aid, e, ult ? null : j.elecciones[i], ult, ult && num === state.ultimoNuevo, r ? r.eventos[i] : null, r ? r.inv : null);
   });
   h += `</div>`;
@@ -1216,15 +1220,15 @@ function panel(aid, e, elegida, activa, nuevo, ev, inv){
       const cls = (el ? (el === k ? 'elegida' : 'descartada') : '') + (k === 'c' ? ' op-c' : '');
       return `<button class="op ${cls}" ${activa ? `data-op="${k}"` : 'disabled'}><span class="l">${k === 'c' ? icoMochila(aid, 22) : k.toUpperCase()}</span><span>${esc(e['opcion_' + k])}</span></button>`;
     }).join('') + `</div>`;
-    if(activa && J()[aid].camino.length > 1) h += `<div style="margin-top:12px;text-align:center"><button class="btn chico" data-acc="deshacer">↩ Me arrepiento</button></div>`;
+    if(activa && J()[aid].camino.length > 1) h += `<div style="margin-top:12px;text-align:center"><button class="btn chico" data-acc="deshacer"><img src="img/marca/ico_volver.webp" alt="" class="ico-in obj-img" data-emo="↩"> Me arrepiento</button></div>`;
   } else {
     const desc = descubiertos(aid), fins = finalesDe(aid);
     h += `<div class="sello">${feliz ? '¡FINAL FELIZ!' : 'FIN'}</div>`;
-    if(nuevo && desc[e.num] === 1) h += `<div class="nuevo-final">⭐ ¡Final nuevo! Llevas ${fins.filter(f => desc[f.num]).length} de ${fins.length}</div>`;
+    if(nuevo && desc[e.num] === 1) h += `<div class="nuevo-final"><img src="img/marca/ico_estrella.webp" alt="" class="ico-in obj-img" data-emo="⭐"> ¡Final nuevo! Llevas ${fins.filter(f => desc[f.num]).length} de ${fins.length}</div>`;
     if(e.dato) h += `<div class="chewie"><img src="${chewieV('contando', aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img">
       <div class="bur"><b>${feliz ? '¡Lo logramos!' : '¡Ánimo! Prueba otro camino.'}</b><br><b>Dato real:</b> ${esc(e.dato)}</div></div>`;
     if(activa) h += `<div class="fin-acc">
-      ${feliz ? '' : `<button class="btn sun full" data-acc="deshacer">↩ Volver a la última decisión</button>`}
+      ${feliz ? '' : `<button class="btn sun full" data-acc="deshacer"><img src="img/marca/ico_volver.webp" alt="" class="ico-in obj-img" data-emo="↩"> Volver a la última decisión</button>`}
       ${feliz && preguntasDisponibles(aid).length >= 3 ? `<button class="btn sun full" data-acc="quiz">🐹 ¡Chewie te reta a un quiz!</button>` : ''}
       <button class="btn prim full" data-acc="otra">Empezar de nuevo</button>
       <button class="btn full" data-acc="mapa">Ver mi camino en el mapa</button></div>`;
@@ -1582,7 +1586,7 @@ function renderQuiz(){
       <div class="fin-acc"><button class="btn prim full" data-acc="otra">Repetir para mejorar</button><button class="btn full" data-acc="salir">Volver</button></div></div>`;
   } else {
     const p = z.ps[z.i];
-    h += `<div class="chewie"><img src="${chewieV('contando', z.aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img"><div class="bur"><b>Pregunta ${z.i + 1} de ${z.ps.length}</b>${p.q.nivel ? `<span class="qz-nivel n${nivelDe(p.q)}">${['Fácil ⭐', 'Media ⭐⭐', 'Difícil ⭐⭐⭐'][nivelDe(p.q) - 1]}</span>` : ''}</div></div>
+    h += `<div class="chewie"><img src="${chewieV('contando', z.aid)}" data-fb="${chewieSrc('contando')}" alt="" class="kit-img"><div class="bur"><b>Pregunta ${z.i + 1} de ${z.ps.length}</b>${p.q.nivel ? `<span class="qz-nivel n${nivelDe(p.q)}">${['Fácil <img src="img/marca/ico_estrella.webp" alt="" class="ico-est obj-img" data-emo="⭐">', 'Media <img src="img/marca/ico_estrella.webp" alt="" class="ico-est obj-img" data-emo="⭐"><img src="img/marca/ico_estrella.webp" alt="" class="ico-est obj-img" data-emo="⭐">', 'Difícil <img src="img/marca/ico_estrella.webp" alt="" class="ico-est obj-img" data-emo="⭐"><img src="img/marca/ico_estrella.webp" alt="" class="ico-est obj-img" data-emo="⭐"><img src="img/marca/ico_estrella.webp" alt="" class="ico-est obj-img" data-emo="⭐">'][nivelDe(p.q) - 1]}</span>` : ''}</div></div>
       <p class="qz-p">${esc(p.q.pregunta)}</p><div class="ops">` +
       p.ops.map((o, k) => {
         let cls = '';
@@ -1742,11 +1746,11 @@ function renderInstalar(){
     <h2 style="text-align:center;font-size:24px;margin:10px 0 6px">¡Bienvenida, aventurera!</h2>
     <p class="muted" style="text-align:center;margin:0 0 16px">Instala la app en tu móvil para jugar como en un juego de verdad (y que se guarde tu progreso).</p>
     ${promptInstalar ? `<button class="btn prim full" data-acc="instalar" style="margin-bottom:14px">📲 Instalar AventurApp</button>` : ''}
-    <div class="card inst ${ios ? 'yo-dispositivo' : ''}"><h2>🍎 iPhone / iPad</h2><ol>
+    <div class="card inst ${ios ? 'yo-dispositivo' : ''}"><h2><img src="img/marca/ico_iphone.webp" alt="" class="ico-h obj-img" data-emo="📱"> iPhone / iPad</h2><ol>
       <li>Abre esta página en <b>Safari</b>.</li>
       <li>Toca el botón <b>Compartir</b> <span class="kbd">⬆︎</span> (abajo).</li>
       <li>Elige <b>«Añadir a pantalla de inicio»</b> y toca <b>Añadir</b>.</li></ol></div>
-    <div class="card inst ${android ? 'yo-dispositivo' : ''}"><h2>🤖 Android</h2><ol>
+    <div class="card inst ${android ? 'yo-dispositivo' : ''}"><h2><img src="img/marca/ico_android.webp" alt="" class="ico-h obj-img" data-emo="🤖"> Android</h2><ol>
       <li>Abre esta página en <b>Chrome</b>.</li>
       <li>Toca el menú <span class="kbd">⋮</span> (arriba a la derecha).</li>
       <li>Elige <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.</li></ol></div>
