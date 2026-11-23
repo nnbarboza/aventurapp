@@ -457,7 +457,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.19.4';
+const APP_VERSION = '0.19.5';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -917,7 +917,7 @@ $('#nav').addEventListener('click', e => { const b = e.target.closest('button[da
 const CARAS = ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6'];
 const caraSrc = (c) => /^cara_/.test(c || '') ? `img/marca/${c}.webp` : `img/marca/avatares/${c || 'n1'}.webp`;
 const avatarSrc = (u) => u.invitado ? caraSrc(u.cara)
-  : u.avatar ? 'img/' + String(u.avatar).trim() : `img/kit/paleolitico/${u.username}/contenta.webp`;
+  : u.avatar ? 'img/' + String(u.avatar).trim() : `img/avatares/${String(u.username).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}.webp`;
 function renderQuien(){
   let h = `${state.user ? `<div style="text-align:left"><button class="btn chico" data-acc="volver">← Volver</button></div>` : ''}<img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
     <h2 style="text-align:center;font-size:26px;margin:14px 0 6px">¿Quién eres?</h2>
