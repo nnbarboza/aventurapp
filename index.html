@@ -227,6 +227,9 @@ nav button.on img{filter:none;opacity:1;transform:scale(1.12) rotate(-4deg)}
 .intro-sec{display:flex;gap:12px;align-items:center;background:var(--paper);border:2px dashed var(--ink2);border-radius:16px;padding:10px 12px;margin:0 0 16px}
 .intro-sec img{width:46px;height:46px;object-fit:contain;flex-shrink:0}
 .intro-sec p{margin:0;font-size:15.5px;line-height:1.45}
+.med-p{display:block;font-family:var(--fd);font-weight:700;font-size:13px;color:var(--ocre);margin-top:2px}
+.aviso{font-size:12px;line-height:1.45;color:var(--ink2);margin:18px 4px 0;text-align:left}
+.firma{text-align:center;font-size:13px;color:var(--ink2);margin:22px 0 6px}
 .perfil-acc{display:flex;flex-direction:column;gap:10px;max-width:290px;margin:0 auto}
 .pin-dots{display:flex;justify-content:center;gap:14px;margin:0 0 16px}
 .pin-dots i{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--ink);display:block}
@@ -299,7 +302,8 @@ nav.oculta{display:none}
 .vista-sw svg{width:20px;height:20px}
 /* vista línea del tiempo */
 .lt{position:relative;padding:6px 0 10px}
-.lt-cam{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.lt-cam{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.lt-st,.lt-hoy{position:relative;z-index:1}
 .lt-st{position:relative;display:flex;align-items:center;gap:14px;margin-bottom:26px;width:100%;border:0;background:none;padding:0;text-align:left}
 .lt-st.der{flex-direction:row-reverse;text-align:right}
 .lt-foto{width:128px;height:128px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);overflow:hidden;flex-shrink:0;box-shadow:3px 3px 0 var(--ink);display:flex;align-items:center;justify-content:center;font-size:48px}
@@ -439,7 +443,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.18.3';
+const APP_VERSION = '0.19.0';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -1014,6 +1018,7 @@ function cambiarPin(u){
     catch(err){ return /fetch|network|Load failed/i.test(err.message) ? 'Necesitas internet 📶' : 'No se pudo cambiar: ' + err.message; }
   }, 'Siguiente');
 }
+const AVISO = 'Esta aplicación la han hecho Georgina y su papá. Es una web-app: se abre desde el navegador, no es una app de ninguna tienda. Es gratis y no tiene publicidad: es solo para que jueguen y aprendan Georgina y sus compis. Solo guarda el nombre de pila y el progreso del juego en una hoja privada de la familia; no pide email, teléfono, fotos ni ubicación. Para hacer los avatares no se ha usado ninguna foto de los compis: son dibujos hechos a partir de una descripción.';
 function abrirPerfil(){
   const u = yo(), fijo = state.usuarios.some(x => x.username === u.username);
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
@@ -1022,7 +1027,8 @@ function abrirPerfil(){
     <img src="${esc(avatarSrc(u))}" alt="" class="pin-av kit-img"><h2>${esc(u.nombre || 'Yo')}</h2>
     <p class="muted" style="margin:4px 0 16px">${fijo ? 'Este móvil es tuyo' : 'Juegas como invitado/a'}</p>
     <div class="perfil-acc">${fijo ? `<button class="btn" data-perfil="pin">Cambiar mi PIN</button>` : ''}
-    <button class="btn" data-perfil="cambiar">Cambiar de jugador</button></div></div>`;
+    <button class="btn" data-perfil="cambiar">Cambiar de jugador</button></div>
+    <p class="aviso">${AVISO}</p></div>`;
   document.body.appendChild(v);
   v.addEventListener('click', e => {
     const b = e.target.closest('[data-perfil]');
@@ -1104,7 +1110,7 @@ function renderInicio(){
   const conLinea = avs.concat(pronto).length > 1 && avs.concat(pronto).every(a => Number(a.hace) > 0);
   const modo = conLinea ? state.vista.modo : 'tarjetas';
   let h = `<div class="cab"><img class="logo-img" src="img/marca/logo_cartel.webp" alt="Escoge tu propia AventurApp">
-    <button id="btnYo" class="yo-top" aria-label="Jugador"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"><span class="yo-cambio" aria-hidden="true"><img src="img/marca/ico_cambiar.webp" alt=""></span></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
+    <button id="btnYo" class="yo-top" aria-label="Mi perfil"><span class="yo-av"><img src="${esc(avatarSrc(u))}" alt="" class="kit-img"></span><b>${esc(u.nombre || 'Yo')}</b></button></div>`;
   if(u.invitado) h += `<p class="invi-nota">Hoy acompañas a Gina en sus aventuras.</p>`;
   if(cats.length > 1) h += `<div class="cat-tabs" role="tablist" aria-label="Categorías">${cats.map(c => `<button class="${c.id === cat ? 'on' : ''}" data-cat="${c.id}" aria-pressed="${c.id === cat}"><img class="ce obj-img" src="img/marca/cat_${c.id}.webp" alt="" data-emo="${c.emo || ''}">${c.nombre}</button>`).join('')}</div>`;
   if(conLinea) h += `<div class="vista-row"><span>Mis aventuras</span><div class="vista-sw"><button class="${modo === 'tarjetas' ? 'on' : ''}" data-modo="tarjetas" aria-label="Ver tarjetas">${icoTarjetas}</button><button class="${modo === 'linea' ? 'on' : ''}" data-modo="linea" aria-label="Ver línea del tiempo">${icoLinea}</button></div></div>`;
@@ -1119,6 +1125,7 @@ function renderInicio(){
     });
   }
   h += pie();
+  h += `<p class="firma">App desarrollada con ❤️ por Georgina y su papá</p>`;
   $('#s-inicio').innerHTML = h;
   if(modo === 'linea') requestAnimationFrame(dibujarCamino);
 }
@@ -1297,7 +1304,7 @@ function renderFinales(){
   const meds = medallas(), n = meds.filter(m => m.ok).length;
   let h = `<h1 style="font-size:28px;margin:6px 0 8px">Logros</h1><div class="intro-sec"><img src="img/marca/nav_finales.webp" alt="" class="obj-img" data-emo="🏆"><p>Tu vitrina de trofeos. Ganas medallas por todo lo que vas consiguiendo, y aquí se guardan los finales que descubres. ¡Cada aventura esconde muchos! ¿Los encontrarás todos?</p></div>
     <h2 class="sec-t" style="margin-top:4px">Medallas <small class="muted">· llevas ${n} de ${meds.length}</small></h2>
-    <div class="meds">${meds.map(m => `<div class="card med ${m.ok ? '' : 'no'}"><span class="m" aria-hidden="true"><img src="img/marca/medallas/${m.img}.webp" alt=""></span><b>${esc(m.titulo)}</b><span>${esc(m.desc)}</span></div>`).join('')}</div>
+    <div class="meds">${meds.map(m => `<div class="card med ${m.ok ? '' : 'no'}"><span class="m" aria-hidden="true"><img src="img/marca/medallas/${m.img}.webp" alt=""></span><b>${esc(m.titulo)}</b><span>${esc(m.desc)}</span>${!m.ok && m.prog ? `<small class="med-p">${m.prog}</small>` : ''}</div>`).join('')}</div>
     <h2 class="sec-t" style="margin-top:22px">Finales</h2>`;
   state.aventuras.forEach(a => {
     const fins = finalesDe(a.id), desc = descubiertos(a.id), n = fins.filter(f => desc[f.num]).length;
@@ -1431,25 +1438,38 @@ function quizzesMios(){ return state.quizzes.filter(q => norm(q.jugadora) === st
 function medallas(){
   const ps = state.partidas.filter(p => norm(p.jugadora) === state.user);
   const tipoDe = p => { const e = escenasDe(p.aventura_id)[Number(p.final)]; return e ? e.tipo : ''; };
+  const jugables = state.aventuras.filter(a => norm(a.activa) !== 'pronto' && Object.keys(escenasDe(a.id)).length);
   const avsJugadas = new Set(ps.map(p => p.aventura_id));
-  const m = [
-    { id:'primera', img:'estrella', titulo:'Primera aventura', desc:'Termina una partida', ok: ps.length >= 1 },
-    { id:'desastre', img:'fuego', titulo:'Primer desastre', desc:'Llega a un final desastre', ok: ps.some(p => tipoDe(p) === 'fin') },
-    { id:'feliz', img:'corazon', titulo:'Final feliz', desc:'Llega a un final feliz', ok: ps.some(p => tipoDe(p) === 'final') },
-    { id:'diez', img:'corona', titulo:'Diez partidas', desc:'Juega 10 partidas', ok: ps.length >= 10 },
-    { id:'viaje', img:'brujula', titulo:'Viaje en el tiempo', desc:'Juega 2 aventuras distintas', ok: avsJugadas.size >= 2 },
-    { id:'quiz', img:'bombilla', titulo:'Quiz perfecto', desc:'Acierta todo un quiz', ok: quizzesMios().some(q => Number(q.total) >= 3 && Number(q.aciertos) === Number(q.total)) }
+  const unicos = t => new Set(ps.filter(p => tipoDe(p) === t).map(p => p.aventura_id + ':' + p.final)).size;
+  const felices = unicos('final'), desastres = unicos('fin'), finales = felices + desastres;
+  const felicesT = jugables.reduce((s, a) => s + finalesDe(a.id).filter(f => f.tipo === 'final').length, 0);
+  const secretos = jugables.reduce((s, a) => s + secretosDe(a.id).size, 0);
+  const conMochila = jugables.filter(a => tieneMochila(a.id));
+  const objetos = conMochila.reduce((s, a) => s + objetosEncontrados(a.id).size, 0);
+  const mochilas = conMochila.filter(a => Object.keys(state.objetos[a.id]).every(x => objetosEncontrados(a.id).has(x))).length;
+  const mapas = jugables.filter(a => { const E = Object.keys(escenasDe(a.id)), v = visitadas(a.id); return E.length && E.every(n => v.has(Number(n))); }).length;
+  const quizPerfectos = new Set(quizzesMios().filter(q => Number(q.total) >= 3 && Number(q.aciertos) === Number(q.total)).map(q => q.aventura_id)).size;
+  const M = (id, img, titulo, desc, valor, meta) => ({ id, img, titulo, desc, ok: valor >= meta, prog: meta > 1 ? Math.min(valor, meta) + '/' + meta : '' });
+  return [
+    M('primera', 'estrella', 'Primera aventura', 'Termina una partida', ps.length, 1),
+    M('diez', 'corona', 'Incansable', 'Juega 10 partidas', ps.length, 10),
+    M('viaje', 'brujula', 'Viajera', 'Juega 3 aventuras distintas', avsJugadas.size, 3),
+    M('trotamundos', 'mundo', 'Trotamundos', 'Juega todas las aventuras', jugables.filter(a => avsJugadas.has(a.id)).length, jugables.length || 1),
+    M('feliz', 'corazon', 'Final feliz', 'Llega a un final feliz', felices, 1),
+    M('felices5', 'corazon', 'Racha de suerte', 'Consigue 5 finales felices distintos', felices, 5),
+    M('felices_todos', 'trofeo', 'Todo felicidad', 'Consigue todos los finales felices', felices, felicesT || 1),
+    M('desastre', 'fuego', 'Primer desastre', 'Llega a un final desastre', desastres, 1),
+    M('desastres10', 'fuego', 'Desastre con estilo', 'Descubre 10 finales desastre distintos', desastres, 10),
+    M('finales25', 'trofeo', 'Coleccionista', 'Descubre 25 finales distintos', finales, 25),
+    M('secretos10', 'libro', 'Amiga de Chewie', 'Descubre 10 secretos de Chewie', secretos, 10),
+    M('secretos50', 'libro', 'Sabelotodo', 'Descubre 50 secretos de Chewie', secretos, 50),
+    M('objetos10', 'huella', 'Bolsillos llenos', 'Encuentra 10 objetos', objetos, 10),
+    M('mochila', 'huella', 'Mochila completa', 'Completa la mochila de una aventura', mochilas, 1),
+    M('quiz', 'bombilla', 'Quiz perfecto', 'Acierta todo un quiz', quizPerfectos, 1),
+    M('quiz3', 'bombilla', 'Cerebrito', 'Puntuación máxima en 3 quizzes', quizPerfectos, 3),
+    M('mapa', 'montana', 'Exploradora', 'Explora todo el mapa de una aventura', mapas, 1),
+    M('mapa3', 'hoja', 'Cartógrafa', 'Completa 3 mapas', mapas, 3)
   ];
-  state.aventuras.forEach(a => {
-    const fins = finalesDe(a.id), desc = descubiertos(a.id), E = Object.keys(escenasDe(a.id)), vis = visitadas(a.id);
-    m.push({ id:'todos_' + a.id, img:'trofeo', titulo:'Todos los finales', desc:a.titulo, ok: fins.length > 0 && fins.every(f => desc[f.num]) });
-    const conD = Object.values(escenasDe(a.id)).filter(e => e.dato), sec = secretosDe(a.id);
-    m.push({ id:'secretos_' + a.id, img:'libro', titulo:'Todos los secretos', desc:a.titulo, ok: conD.length > 0 && conD.every(e => sec.has(e.num)) });
-    m.push({ id:'mapa_' + a.id, img:({ paleolitico:'montana', neolitico:'hoja' })[a.id] || 'mundo', titulo:'Mapa completo', desc:a.titulo, ok: E.length > 0 && E.every(n => vis.has(Number(n))) });
-    if(tieneMochila(a.id)){ const objs = Object.keys(state.objetos[a.id]), enc = objetosEncontrados(a.id);
-      m.push({ id:'objetos_' + a.id, img:'huella', titulo:mochilaInfo(a.id).nombre + ' completo', desc:a.titulo, ok: objs.every(x => enc.has(x)) }); }
-  });
-  return m;
 }
 /* Avisa (una sola vez) de las medallas nuevas. */
 function avisarMedallas(){
@@ -1457,7 +1477,7 @@ function avisarMedallas(){
   const nuevas = medallas().filter(m => m.ok && mias.indexOf(m.id) < 0);
   if(!nuevas.length) return;
   vistas[state.user] = mias.concat(nuevas.map(m => m.id)); guardar(LS.medallas, vistas);
-  setTimeout(() => toast('🏅 ¡Medalla nueva! ' + nuevas.map(m => m.titulo + (m.id.indexOf('_') > 0 ? ' · ' + m.desc : '')).join(', ')), 1200);
+  setTimeout(() => toast('🏅 ¡Medalla nueva! ' + nuevas.map(m => m.titulo).join(', ')), 1200);
 }
 
 /* ============================================================
@@ -1690,7 +1710,8 @@ function renderInstalar(){
       <li>Toca el menú <span class="kbd">⋮</span> (arriba a la derecha).</li>
       <li>Elige <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.</li></ol></div>
     <div class="card inst"><h2>🎒 Y después…</h2><ol><li>Abre <b>AventurApp</b> desde el icono nuevo de tu móvil.</li><li>Elige quién eres (o crea tu invitado).</li><li>¡A jugar!</li></ol></div>
-    <button class="btn full" data-acc="seguir" style="margin-top:6px">Jugar ahora desde el navegador</button>`;
+    <button class="btn full" data-acc="seguir" style="margin-top:6px">Jugar ahora desde el navegador</button>
+    <p class="aviso">${AVISO}</p>`;
 }
 $('#s-instalar').addEventListener('click', e => {
   const a = e.target.closest('[data-acc]'); if(!a) return;
@@ -1700,7 +1721,11 @@ $('#s-instalar').addEventListener('click', e => {
 
 function marcarMedallasVistas(){
   const vistas = leer(LS.medallas, {});
-  if(state.user && !vistas[state.user]){ vistas[state.user] = medallas().filter(m => m.ok).map(m => m.id); guardar(LS.medallas, vistas); }
+  const v2 = leer('avp_medallas_v2', {});   // medallas nuevas (v0.19): las ya ganadas no se anuncian de golpe
+  if(state.user && (!vistas[state.user] || !v2[state.user])){
+    vistas[state.user] = Array.from(new Set((vistas[state.user] || []).concat(medallas().filter(m => m.ok).map(m => m.id))));
+    guardar(LS.medallas, vistas); v2[state.user] = 1; guardar('avp_medallas_v2', v2);
+  }
 }
 function arrancarPantalla(saltarInstalar){
   marcarMedallasVistas();
