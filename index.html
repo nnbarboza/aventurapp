@@ -266,7 +266,9 @@ body.cargando .cargando-txt{display:block}
 .rk-avs{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:0 14px 10px}
 .rk-av-f{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;font-size:14px;padding:6px 0;border-top:1.5px dashed var(--line, #e6dccb)}
 .rk-ico{width:22px;height:22px;object-fit:contain;vertical-align:-5px}
-.rk-med{width:30px;height:30px;object-fit:contain;vertical-align:middle}
+.rk-fila .rk-avw .rk-av{width:42px;height:42px;padding:0;border:2px solid var(--ink);background:var(--sun)}
+.rk-avw{position:relative;flex-shrink:0;display:block;width:42px;height:42px;margin-right:6px}
+.rk-fila .rk-avw .rk-med{position:absolute;right:-8px;bottom:-8px;width:24px;height:24px;max-width:24px;border:0;padding:0;background:none;border-radius:0;object-fit:contain;filter:drop-shadow(1px 1px 0 rgba(0,0,0,.25))}
 .rk-mini{width:18px;height:18px;object-fit:contain;vertical-align:-4px}
 .rk-av-f span{white-space:nowrap}
 .rk-av-f b{font-family:var(--fd);font-weight:600;font-size:15px}
@@ -455,7 +457,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.19.3';
+const APP_VERSION = '0.19.4';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -1431,8 +1433,8 @@ function renderRanking(){
   orden.forEach((s, i) => {
     if(s[tab.k] !== prev){ pos = i + 1; prev = s[tab.k]; }
     const medalla = s[tab.k] > 0 && pos <= 3 ? `<img src="img/marca/podio_${pos}.webp" alt="Puesto ${pos}" class="obj-img rk-med" data-emo="${['🥇', '🥈', '🥉'][pos - 1]}">` : '';
-    h += `<div class="rk-fila ${s.username === state.user ? 'yo' : ''}"><span class="rk-pos">${medalla || pos}</span>
-      <img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av"><b>${esc(s.u.nombre || s.username)}</b>
+    h += `<div class="rk-fila ${s.username === state.user ? 'yo' : ''}"><span class="rk-pos">${pos}</span>
+      <span class="rk-avw"><img src="${esc(avatarSrc(s.u))}" alt="" class="kit-img rk-av">${medalla}</span><b>${esc(s.u.nombre || s.username)}</b>
       <span class="rk-val">${s[tab.k]}<small> ${s[tab.k] === 1 ? tab.u1 : tab.u}</small></span></div>`;
   });
   h += `</div><h2 class="sec-t">Cómo va cada uno</h2>`;
