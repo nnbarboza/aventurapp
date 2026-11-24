@@ -468,7 +468,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.20.2';
+const APP_VERSION = '0.20.3';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -1822,6 +1822,21 @@ function repintar(){
   if(state.screen === 'finales') renderFinales();
   if(state.screen === 'datos') renderDatos();
 }
+/* Sube lo que este móvil tiene y la hoja no (p. ej. envíos que se perdieron con la cola antigua). La hoja no duplica: todo va por id. */
+function resincronizar(d){
+  if(!d || !Array.isArray(d.partidas)) return;
+  const cola = leer(LS.cola, []), enCola = new Set(cola.map(x => (x.payload && (x.payload.id || (x.payload.jugadora + ':' + x.payload.aventura_id + ':' + x.payload.num))) || ''));
+  const hojaP = new Set(d.partidas.map(p => String(p.id))), hojaQ = new Set((d.quizzes || []).map(q => String(q.id)));
+  const hojaS = new Set((d.secretos || []).map(r => norm(r.jugadora) + ':' + String(r.aventura_id).trim() + ':' + Number(r.num)));
+  let n = 0;
+  state.partidas.forEach(p => { if(p && p.id && !hojaP.has(String(p.id)) && !enCola.has(p.id)){ cola.push({ action:'savePartida', payload:p }); n++; } });
+  state.quizzes.forEach(q => { if(q && q.id && !hojaQ.has(String(q.id)) && !enCola.has(q.id)){ cola.push({ action:'saveQuiz', payload:q }); n++; } });
+  Object.keys(state.secretos || {}).forEach(u => Object.keys(state.secretos[u] || {}).forEach(aid => (state.secretos[u][aid] || []).forEach(num => {
+    const k = u + ':' + aid + ':' + Number(num);
+    if(!hojaS.has(k) && !enCola.has(k)){ cola.push({ action:'saveSecreto', payload:{ jugadora:u, aventura_id:aid, num:Number(num), ts:new Date().toISOString() } }); n++; }
+  })));
+  if(n) guardar(LS.cola, cola);
+}
 async function bootstrap(){
   normaliza(leer(LS.datos, null) || SEED);
   if(!state.usuarios.length) state.usuarios = SEED.usuarios.slice();
@@ -1847,6 +1862,7 @@ async function bootstrap(){
       d.quizzes.forEach(q => { if(q && q.id && !ids.has(q.id)) state.quizzes.push(q); });
       guardar(LS.quizzes, state.quizzes);
     }
+    resincronizar(d);
     if(!state.usuarios.length) state.usuarios = SEED.usuarios.slice();
     if(state.screen === 'quien') renderQuien();
     else if(state.screen === 'instalar') {}
