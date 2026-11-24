@@ -468,7 +468,7 @@ nav.oculta{display:none}
    ESCOGE TU PROPIA AVENTURApp
    index.html único · vanilla JS · Apps Script + Sheet · PWA
    ============================================================ */
-const APP_VERSION = '0.20.1';
+const APP_VERSION = '0.20.2';
 /* Pega aquí la URL /exec del Apps Script. Vacío = modo local con la aventura de ejemplo. */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbypZOysAz3xOg1Lbht-I01d9QsWDnDg6jmFww89C54wtvCJkVqfXAaB_dj1gRJ5eYE9/exec';
 
@@ -1734,20 +1734,28 @@ async function api(action, params){
   const r = await fetch(BACKEND_URL + '?' + q.toString(), { redirect:'follow' });
   const t = await r.text();
   let j; try { j = JSON.parse(t); } catch(e){ throw new Error('El servidor no respondió bien (¿falta redesplegar el Apps Script?)'); }
-  if(!j.ok) throw new Error(j.error || 'Error del servidor');
+  if(!j.ok){ const e = new Error(j.error || 'Error del servidor'); e.servidor = true; throw e; }
   return j.data;
 }
 let flushing = false;
 async function flush(){
   if(!BACKEND_URL || flushing) return;
   flushing = true;
+  /* Se relee la cola en cada vuelta (lo que se añade mientras tanto no se pierde).
+     Si el servidor rechaza un envío, se aparta a «avp_cola_fallos» y se sigue: nunca bloquea lo demás. */
   try {
-    let cola = leer(LS.cola, []);
-    while(cola.length){
-      await api(cola[0].action, { payload:cola[0].payload });
-      cola.shift(); guardar(LS.cola, cola);
+    for(let n = 0; n < 200; n++){
+      const cola = leer(LS.cola, []); if(!cola.length) break;
+      const it = cola[0];
+      try { await api(it.action, { payload:it.payload }); }
+      catch(e){
+        if(!e.servidor) throw e;   // sin red: se reintenta luego
+        const f = leer('avp_cola_fallos', []); f.push(Object.assign({}, it, { error:e.message, ts_error:new Date().toISOString() })); guardar('avp_cola_fallos', f.slice(-50));
+      }
+      const ahora = leer(LS.cola, []), i = ahora.findIndex(x => JSON.stringify(x) === JSON.stringify(it));
+      if(i >= 0){ ahora.splice(i, 1); guardar(LS.cola, ahora); }
     }
-  } catch(e){ /* sin red: se reintenta en el próximo arranque */ }
+  } catch(e){ /* sin red */ }
   flushing = false;
 }
 async function borrarProgreso(){
@@ -1848,6 +1856,9 @@ async function bootstrap(){
   document.body.classList.remove('cargando');
 }
 
+/* Reintenta subir lo pendiente al volver a la app o recuperar la red. */
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') flush(); });
+window.addEventListener('online', () => flush());
 if('serviceWorker' in navigator && location.protocol === 'https:'){
   navigator.serviceWorker.register('sw.js', { updateViaCache:'none' }).catch(() => {});
 }

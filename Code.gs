@@ -8,7 +8,7 @@
           Ejecutar como: yo · Acceso: cualquier usuario.
    Cada cambio de código: Gestionar implementaciones › ✏️ › Versión nueva.
    ============================================================ */
-const VERSION = '0.20.0';
+const VERSION = '0.20.2';
 
 const HEADERS = {
   Usuarios:  ['username', 'nombre', 'avatar', 'color', 'activo', 'pin'],
@@ -109,7 +109,8 @@ function handleCambiarPin(d) {
   return _json({ ok: true, data: { username: vals[r][iU] } });
 }
 /** Cambia el color de fondo de una jugadora (solo colores de la paleta). */
-function handleCambiarColor(d) {
+function handleCambiarColor(p) {
+  const d = p.payload ? (typeof p.payload === 'string' ? JSON.parse(p.payload) : p.payload) : p;
   const PALETA = ['#F6C445', '#F4A7B9', '#C9A7EB', '#9CCBE8', '#A8D8B0', '#B9D98B', '#F6A96B', '#FFFDF8'];
   const color = String(d.color || '').toUpperCase();
   if (PALETA.indexOf(color) < 0) return _json({ ok: false, error: 'Color no permitido' });
